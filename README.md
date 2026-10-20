@@ -401,6 +401,24 @@ cd frontend
 npm test
 ```
 
+### Resultados da última execução
+
+Executados localmente com JDK 24 (compilando com `--release 21`), Maven 3.9.9, Node 24 e
+Angular CLI 20:
+
+| Projeto | Comando | Resultado |
+| --- | --- | --- |
+| Back-end (unitários) | `./mvnw test` | **16 testes**, 0 falhas — `BUILD SUCCESS` |
+| Back-end (integração) | `./mvnw verify` | **18 testes**, 0 falhas — `BUILD SUCCESS` |
+| Front-end | `npm test` | **25 testes**, 0 falhas — 6 arquivos de teste |
+| Front-end (build) | `npm run build` | bundle de 1,48 MB (311 kB gzip), sem erros |
+
+Cobertura dos testes back-end: cadastro válido, validação de campos inválidos, e-mail duplicado,
+cliente inexistente, exclusão bloqueada com oportunidades, cadastro de oportunidade, valor
+inválido, cliente inexistente na oportunidade, transição para ganho, transição para perda com
+motivo obrigatório, transição inválida, reabertura de oportunidade ganha e os cálculos do
+dashboard (inclusive o caso sem dados, sem divisão por zero).
+
 ## 14. Capturas de tela
 
 As imagens abaixo são capturas reais da aplicação em execução (perfil `demo`), geradas na pasta
