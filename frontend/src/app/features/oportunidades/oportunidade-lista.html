@@ -1,0 +1,246 @@
+<section class="nexus-page">
+  <div class="nexus-surface nexus-filtros">
+    <div class="nexus-filtros__campo">
+      <label for="filtro-cliente">Cliente</label>
+      <p-select
+        inputId="filtro-cliente"
+        [options]="opcoesCliente()"
+        [ngModel]="filtroCliente()"
+        (ngModelChange)="filtroCliente.set($event)"
+        placeholder="Todos os clientes"
+        [showClear]="true"
+        [filter]="true"
+        appendTo="body"
+      />
+    </div>
+
+    <div class="nexus-filtros__campo">
+      <label for="filtro-etapa">Etapa</label>
+      <p-select
+        inputId="filtro-etapa"
+        [options]="opcoesEtapa()"
+        [ngModel]="filtroEtapa()"
+        (ngModelChange)="filtroEtapa.set($event)"
+        placeholder="Todas as etapas"
+        [showClear]="true"
+        appendTo="body"
+      />
+    </div>
+
+    <div class="nexus-filtros__campo">
+      <label for="filtro-data-inicial">Criada de</label>
+      <p-datepicker
+        inputId="filtro-data-inicial"
+        [ngModel]="filtroDataInicial()"
+        (ngModelChange)="filtroDataInicial.set($event)"
+        dateFormat="dd/mm/yy"
+        [showIcon]="true"
+        appendTo="body"
+      />
+    </div>
+
+    <div class="nexus-filtros__campo">
+      <label for="filtro-data-final">Criada ate</label>
+      <p-datepicker
+        inputId="filtro-data-final"
+        [ngModel]="filtroDataFinal()"
+        (ngModelChange)="filtroDataFinal.set($event)"
+        dateFormat="dd/mm/yy"
+        [showIcon]="true"
+        appendTo="body"
+      />
+    </div>
+
+    <div class="nexus-filtros__acoes">
+      <p-button label="Aplicar" icon="pi pi-filter" size="small" (onClick)="aplicarFiltros()" />
+      <p-button
+        label="Limpar"
+        icon="pi pi-times"
+        size="small"
+        severity="secondary"
+        [outlined]="true"
+        [disabled]="filtrosAtivos() === 0"
+        (onClick)="limparFiltros()"
+      />
+    </div>
+  </div>
+
+  <div class="nexus-surface nexus-toolbar">
+    <div class="nexus-toolbar__info">
+      <span class="nexus-muted">
+        {{ totalRegistros() }} oportunidade(s) encontrada(s)
+        <ng-container *ngIf="filtrosAtivos() > 0"> com filtros aplicados</ng-container>
+      </span>
+    </div>
+    <div class="nexus-toolbar__acoes">
+      <a
+        pButton
+        routerLink="/oportunidades/novo"
+        label="Nova oportunidade"
+        icon="pi pi-plus"
+        size="small"></a>
+    </div>
+  </div>
+
+  <div *ngIf="erro()" class="nexus-surface nexus-estado-erro">
+    <i class="pi pi-exclamation-triangle"></i>
+    <div>
+      <strong>Nao foi possivel carregar as oportunidades</strong>
+      <p class="nexus-muted">{{ erro() }}</p>
+    </div>
+    <p-button label="Tentar novamente" icon="pi pi-refresh" (onClick)="carregar()" />
+  </div>
+
+  <div class="nexus-surface nexus-tabela-container">
+    <p-table
+      [value]="oportunidades()"
+      [lazy]="true"
+      [paginator]="true"
+      [rows]="tamanhoPagina()"
+      [first]="primeiraPagina()"
+      [totalRecords]="totalRegistros()"
+      [loading]="carregando()"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first} a {last} de {totalRecords} oportunidades"
+      [scrollable]="true"
+      (onLazyLoad)="aoMudarPagina($event)"
+      (onSort)="aoOrdenar($event)"
+      sortField="dataCriacao"
+      [sortOrder]="-1"
+      dataKey="id"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="titulo">Oportunidade <p-sortIcon field="titulo" /></th>
+          <th>Cliente</th>
+          <th pSortableColumn="etapa">Etapa <p-sortIcon field="etapa" /></th>
+          <th pSortableColumn="probabilidade" class="nexus-coluna-centro">Prob. <p-sortIcon field="probabilidade" /></th>
+          <th pSortableColumn="valorEstimado" class="nexus-coluna-direita">Valor <p-sortIcon field="valorEstimado" /></th>
+          <th pSortableColumn="dataPrevistaFechamento" class="nexus-coluna-centro">Previsao <p-sortIcon field="dataPrevistaFechamento" /></th>
+          <th class="nexus-coluna-acoes">Acoes</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-oportunidade>
+        <tr>
+          <td>
+            <div class="nexus-oportunidade">
+              <strong>{{ oportunidade.titulo }}</strong>
+              <span *ngIf="oportunidade.descricao">{{ oportunidade.descricao }}</span>
+            </div>
+          </td>
+          <td>
+            <div class="nexus-oportunidade">
+              <strong>{{ oportunidade.clienteNome }}</strong>
+              <span *ngIf="oportunidade.clienteEmpresa">{{ oportunidade.clienteEmpresa }}</span>
+            </div>
+          </td>
+          <td>
+            <p-tag
+              [value]="oportunidade.etapaDescricao"
+              [severity]="etapaSeveridade(oportunidade.etapa)"
+              [rounded]="true"
+            />
+          </td>
+          <td class="nexus-coluna-centro nexus-valor">{{ oportunidade.probabilidade }}%</td>
+          <td class="nexus-coluna-direita nexus-valor">
+            {{ oportunidade.valorEstimado | currency: 'BRL' : 'symbol' : '1.0-2' }}
+          </td>
+          <td class="nexus-coluna-centro">
+            {{
+              oportunidade.dataPrevistaFechamento
+                ? (oportunidade.dataPrevistaFechamento | date: 'dd/MM/yyyy')
+                : '-'
+            }}
+          </td>
+          <td class="nexus-coluna-acoes">
+            <div class="nexus-acoes">
+              <p-select
+                *ngIf="etapasDisponiveis(oportunidade.etapa).length > 0; else etapaFinal"
+                [options]="etapasDisponiveis(oportunidade.etapa)"
+                [ngModel]="null"
+                (ngModelChange)="moverEtapa(oportunidade, $event)"
+                placeholder="Mover"
+                [showClear]="true"
+                appendTo="body"
+                styleClass="nexus-select-etapa"
+              />
+              <ng-template #etapaFinal>
+                <span class="nexus-muted nexus-etapa-final">Encerrada</span>
+              </ng-template>
+
+              <a
+                pButton
+                icon="pi pi-pencil"
+                severity="secondary"
+                [text]="true"
+                pTooltip="Editar"
+                tooltipPosition="top"
+                aria-label="Editar"
+                [routerLink]="['/oportunidades', oportunidade.id, 'editar']"
+              ></a>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                pTooltip="Excluir"
+                tooltipPosition="top"
+                aria-label="Excluir"
+                (click)="confirmarExclusao(oportunidade)"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="7">
+            <div class="nexus-vazio">
+              <i class="pi pi-briefcase"></i>
+              <strong>Nenhuma oportunidade encontrada</strong>
+              <p class="nexus-muted">
+                Ajuste os filtros ou cadastre uma nova negociacao para acompanhar o funil.
+              </p>
+              <a
+                pButton
+                routerLink="/oportunidades/novo"
+                label="Cadastrar oportunidade"
+                icon="pi pi-plus"
+                size="small"></a>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</section>
+
+<p-dialog
+  header="Motivo da perda"
+  [modal]="true"
+  [visible]="dialogoPerdaAberto()"
+  (visibleChange)="dialogoPerdaAberto.set($event)"
+  [style]="{ width: '28rem' }"
+  [draggable]="false"
+>
+  <p class="nexus-muted nexus-dialogo-ajuda">
+    Informe o motivo da perda. O registro sera exibido no historico da oportunidade.
+  </p>
+
+  <textarea
+    pTextarea
+    rows="4"
+    [ngModel]="motivoPerda()"
+    (ngModelChange)="motivoPerda.set($event)"
+    placeholder="Ex.: cliente escolheu a concorrencia"
+  ></textarea>
+
+  <ng-template #footer>
+    <p-button label="Cancelar" severity="secondary" [outlined]="true" (onClick)="dialogoPerdaAberto.set(false)" />
+    <p-button label="Registrar perda" icon="pi pi-check" severity="danger" (onClick)="confirmarPerda()" />
+  </ng-template>
+</p-dialog>

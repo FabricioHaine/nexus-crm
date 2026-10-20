@@ -1,0 +1,97 @@
+<section class="nexus-page">
+  <!-- Estado de erro -->
+  <div *ngIf="erro()" class="nexus-surface nexus-estado-erro">
+    <i class="pi pi-exclamation-triangle"></i>
+    <div>
+      <strong>Nao foi possivel carregar o dashboard</strong>
+      <p class="nexus-muted">{{ erro() }}</p>
+    </div>
+    <p-button label="Tentar novamente" icon="pi pi-refresh" (onClick)="carregar()" />
+  </div>
+
+  <ng-container *ngIf="!erro()">
+    <!-- Indicadores -->
+    <div class="nexus-kpis">
+      <ng-container *ngIf="carregando(); else cartoesProntos">
+        <div class="nexus-kpi" *ngFor="let item of [1, 2, 3, 4, 5]">
+          <p-skeleton width="45%" height="0.75rem" styleClass="nexus-skeleton" />
+          <p-skeleton width="65%" height="1.6rem" styleClass="nexus-skeleton" />
+          <p-skeleton width="85%" height="0.7rem" styleClass="nexus-skeleton" />
+        </div>
+      </ng-container>
+
+      <ng-template #cartoesProntos>
+        <div class="nexus-kpi" *ngFor="let cartao of cartoes()" [class]="'nexus-kpi nexus-kpi--' + cartao.tom">
+          <div class="nexus-kpi__topo">
+            <span class="nexus-kpi__rotulo">{{ cartao.rotulo }}</span>
+            <span class="nexus-kpi__icone"><i [class]="cartao.icone"></i></span>
+          </div>
+          <strong class="nexus-kpi__valor nexus-valor">{{ cartao.valor }}</strong>
+          <span class="nexus-kpi__auxiliar">{{ cartao.auxiliar }}</span>
+        </div>
+      </ng-template>
+    </div>
+
+    <!-- Graficos -->
+    <div class="nexus-graficos">
+      <div class="nexus-surface nexus-grafico">
+        <header class="nexus-grafico__cabecalho">
+          <h2 class="nexus-section-title">Oportunidades por etapa</h2>
+          <span class="nexus-muted">Distribuicao atual do funil</span>
+        </header>
+
+        <div *ngIf="carregando()" class="nexus-grafico__corpo">
+          <p-skeleton width="100%" height="260px" styleClass="nexus-skeleton" />
+        </div>
+
+        <div *ngIf="!carregando() && semDados()" class="nexus-grafico__vazio">
+          <i class="pi pi-chart-bar"></i>
+          <p>Nenhuma oportunidade cadastrada ate o momento.</p>
+          <a pButton routerLink="/oportunidades/novo" label="Criar primeira oportunidade" size="small"></a>
+        </div>
+
+        <div *ngIf="!carregando() && !semDados()" class="nexus-grafico__corpo">
+          <p-chart type="doughnut" [data]="dadosGraficoEtapas()" [options]="opcoesGraficoEtapas" />
+        </div>
+      </div>
+
+      <div class="nexus-surface nexus-grafico">
+        <header class="nexus-grafico__cabecalho">
+          <h2 class="nexus-section-title">Evolucao das vendas</h2>
+          <span class="nexus-muted">Valor ganho nos ultimos 6 meses</span>
+        </header>
+
+        <div *ngIf="carregando()" class="nexus-grafico__corpo">
+          <p-skeleton width="100%" height="260px" styleClass="nexus-skeleton" />
+        </div>
+
+        <div *ngIf="!carregando() && semDados()" class="nexus-grafico__vazio">
+          <i class="pi pi-chart-line"></i>
+          <p>Sem vendas encerradas para exibir.</p>
+        </div>
+
+        <div *ngIf="!carregando() && !semDados()" class="nexus-grafico__corpo">
+          <p-chart type="line" [data]="dadosGraficoEvolucao()" [options]="opcoesGraficoEvolucao" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Resumo por etapa -->
+    <div class="nexus-surface nexus-tabela-etapas">
+      <header class="nexus-grafico__cabecalho">
+        <h2 class="nexus-section-title">Detalhamento por etapa</h2>
+        <a routerLink="/funil" class="nexus-muted nexus-link-pequeno">
+          Ver funil comercial <i class="pi pi-arrow-right"></i>
+        </a>
+      </header>
+
+      <div class="nexus-tabela-etapas__grade">
+        <div *ngFor="let etapa of porEtapa()" class="nexus-etapa">
+          <span class="nexus-etapa__rotulo">{{ etapa.etapaDescricao }}</span>
+          <strong class="nexus-valor">{{ etapa.quantidade }}</strong>
+          <span class="nexus-muted nexus-valor">{{ etapa.valorTotal | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</section>

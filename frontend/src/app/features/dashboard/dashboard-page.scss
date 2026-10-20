@@ -1,0 +1,211 @@
+.nexus-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+
+.nexus-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px;
+  background: var(--nexus-surface);
+  border: 1px solid var(--nexus-border);
+  border-left: 3px solid var(--nexus-primary);
+  border-radius: var(--nexus-radius-lg);
+  box-shadow: var(--nexus-shadow-sm);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--nexus-shadow);
+  }
+}
+
+.nexus-kpi__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.nexus-kpi__rotulo {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nexus-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nexus-kpi__icone {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  font-size: 14px;
+  color: var(--nexus-primary);
+  background: var(--nexus-primary-soft);
+  border-radius: 8px;
+}
+
+.nexus-kpi__valor {
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.15;
+}
+
+.nexus-kpi__auxiliar {
+  font-size: 12px;
+  color: var(--nexus-text-muted);
+}
+
+.nexus-kpi--sucesso {
+  border-left-color: var(--nexus-success);
+
+  .nexus-kpi__icone {
+    color: var(--nexus-success);
+    background: var(--nexus-success-soft);
+  }
+}
+
+.nexus-kpi--perigo {
+  border-left-color: var(--nexus-danger);
+
+  .nexus-kpi__icone {
+    color: var(--nexus-danger);
+    background: var(--nexus-danger-soft);
+  }
+}
+
+.nexus-kpi--destaque {
+  border-left-color: var(--nexus-warning);
+
+  .nexus-kpi__icone {
+    color: var(--nexus-warning);
+    background: var(--nexus-warning-soft);
+  }
+}
+
+.nexus-kpi--neutro {
+  border-left-color: var(--nexus-text-soft);
+
+  .nexus-kpi__icone {
+    color: var(--nexus-navy-600);
+    background: #eef2f7;
+  }
+}
+
+/* --- Graficos ---------------------------------------------------------------- */
+.nexus-graficos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 16px;
+}
+
+.nexus-grafico {
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+}
+
+.nexus-grafico__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  span {
+    font-size: 12px;
+  }
+}
+
+.nexus-grafico__corpo {
+  position: relative;
+  height: 280px;
+}
+
+.nexus-grafico__vazio {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 260px;
+  color: var(--nexus-text-muted);
+  text-align: center;
+
+  i {
+    font-size: 26px;
+    color: var(--nexus-border-strong);
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+.nexus-link-pequeno {
+  font-size: 12.5px;
+
+  i {
+    font-size: 11px;
+  }
+}
+
+/* --- Detalhamento ------------------------------------------------------------ */
+.nexus-tabela-etapas__grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.nexus-etapa {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid var(--nexus-border);
+  border-radius: var(--nexus-radius);
+
+  strong {
+    font-size: 20px;
+  }
+
+  span {
+    font-size: 12px;
+  }
+}
+
+.nexus-etapa__rotulo {
+  font-weight: 600;
+  color: var(--nexus-text);
+}
+
+.nexus-estado-erro {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+
+  i {
+    font-size: 22px;
+    color: var(--nexus-danger);
+  }
+
+  strong {
+    display: block;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 13px;
+  }
+}
+
+:host ::ng-deep .nexus-skeleton {
+  margin-bottom: 8px;
+}

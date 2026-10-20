@@ -1,0 +1,21 @@
+<section class="nexus-erro">
+  <div class="nexus-erro__card">
+    <span class="nexus-erro__codigo">404</span>
+    <h2>Pagina nao encontrada</h2>
+    <p class="nexus-muted">
+      A rota acessada nao existe no Nexus CRM. Voce pode voltar ao dashboard ou navegar pelas
+      opcoes do menu lateral.
+    </p>
+
+    <div class="nexus-erro__acoes">
+      <a pButton routerLink="/dashboard" label="Ir para o dashboard" icon="pi pi-chart-pie"></a>
+      <a
+        pButton
+        routerLink="/clientes"
+        label="Ver clientes"
+        icon="pi pi-users"
+        severity="secondary"
+        [outlined]="true"></a>
+    </div>
+  </div>
+</section>

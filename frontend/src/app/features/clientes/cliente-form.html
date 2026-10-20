@@ -1,0 +1,113 @@
+<section class="nexus-page nexus-form-pagina">
+  <div class="nexus-breadcrumb">
+    <a routerLink="/clientes">Clientes</a>
+    <i class="pi pi-angle-right"></i>
+    <span>{{ titulo }}</span>
+  </div>
+
+  <div *ngIf="erro()" class="nexus-surface nexus-estado-erro">
+    <i class="pi pi-exclamation-triangle"></i>
+    <div>
+      <strong>Nao foi possivel carregar o cliente</strong>
+      <p class="nexus-muted">{{ erro() }}</p>
+    </div>
+    <a pButton routerLink="/clientes" label="Voltar" icon="pi pi-arrow-left" [outlined]="true" size="small"></a>
+  </div>
+
+  <form *ngIf="!erro()" [formGroup]="formulario" (ngSubmit)="salvar()" class="nexus-form-layout">
+    <div class="nexus-surface nexus-form-card">
+      <header class="nexus-form-card__cabecalho">
+        <h2 class="nexus-section-title">Dados do cliente</h2>
+        <p class="nexus-muted">Campos marcados com * sao obrigatorios.</p>
+      </header>
+
+      <div *ngIf="carregando()" class="nexus-form-corpo">
+        <p-skeleton width="100%" height="3rem" styleClass="nexus-skeleton" />
+        <p-skeleton width="100%" height="3rem" styleClass="nexus-skeleton" />
+        <p-skeleton width="100%" height="3rem" styleClass="nexus-skeleton" />
+      </div>
+
+      <div *ngIf="!carregando()" class="nexus-form-corpo nexus-grid-form">
+        <div class="nexus-campo nexus-campo--completo">
+          <label for="nome">Nome completo *</label>
+          <input
+            id="nome"
+            pInputText
+            formControlName="nome"
+            placeholder="Ex.: Ana Ribeiro"
+            [class.nexus-invalido]="campoInvalido('nome')"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('nome')">{{ mensagemDoCampo('nome') }}</small>
+        </div>
+
+        <div class="nexus-campo">
+          <label for="email">E-mail *</label>
+          <input
+            id="email"
+            pInputText
+            type="email"
+            formControlName="email"
+            placeholder="nome@empresa.com.br"
+            [class.nexus-invalido]="campoInvalido('email')"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('email')">{{ mensagemDoCampo('email') }}</small>
+        </div>
+
+        <div class="nexus-campo">
+          <label for="telefone">Telefone</label>
+          <input id="telefone" pInputText formControlName="telefone" placeholder="(11) 90000-0000" />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('telefone')">{{ mensagemDoCampo('telefone') }}</small>
+        </div>
+
+        <div class="nexus-campo">
+          <label for="empresa">Empresa</label>
+          <input id="empresa" pInputText formControlName="empresa" placeholder="Razao social" />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('empresa')">{{ mensagemDoCampo('empresa') }}</small>
+        </div>
+
+        <div class="nexus-campo">
+          <label for="cargo">Cargo</label>
+          <input id="cargo" pInputText formControlName="cargo" placeholder="Ex.: Gerente de Compras" />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('cargo')">{{ mensagemDoCampo('cargo') }}</small>
+        </div>
+
+        <div class="nexus-campo nexus-campo--completo">
+          <label for="observacoes">Observacoes</label>
+          <textarea
+            id="observacoes"
+            pInputTextarea
+            rows="4"
+            formControlName="observacoes"
+            placeholder="Informacoes adicionais sobre o cliente"
+          ></textarea>
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('observacoes')">{{ mensagemDoCampo('observacoes') }}</small>
+        </div>
+      </div>
+    </div>
+
+    <aside class="nexus-form-lateral">
+      <div class="nexus-surface nexus-dica">
+        <i class="pi pi-info-circle"></i>
+        <div>
+          <strong>Preencha os dados com atencao</strong>
+          <p class="nexus-muted">
+            O e-mail identifica o cliente de forma unica. Clientes com oportunidades vinculadas nao
+            podem ser excluidos, apenas editados.
+          </p>
+        </div>
+      </div>
+
+      <div class="nexus-acoes-form">
+        <p-button
+          type="submit"
+          label="Salvar cliente"
+          icon="pi pi-check"
+          [loading]="salvando()"
+          [disabled]="carregando()"
+          styleClass="nexus-botao-largo"
+        />
+        <a pButton routerLink="/clientes" label="Cancelar" severity="secondary" [outlined]="true" styleClass="nexus-botao-largo"></a>
+      </div>
+    </aside>
+  </form>
+</section>

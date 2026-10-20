@@ -1,0 +1,162 @@
+.nexus-funil-resumo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 16px;
+  padding: 18px;
+}
+
+.nexus-funil-resumo__item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  span {
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  strong {
+    font-size: 20px;
+    font-weight: 600;
+  }
+}
+
+.nexus-funil {
+  padding: 18px;
+}
+
+.nexus-funil__cabecalho {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--nexus-border);
+
+  span {
+    font-size: 12px;
+  }
+}
+
+.nexus-funil__corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nexus-funil__etapa {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) 170px;
+  align-items: center;
+  gap: 16px;
+}
+
+.nexus-funil__rotulo {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+
+  strong {
+    font-size: 13.5px;
+  }
+
+  span {
+    font-size: 12px;
+  }
+}
+
+.nexus-funil__barra-area {
+  display: flex;
+  align-items: center;
+  height: 34px;
+  background: #f1f5f9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.nexus-funil__barra {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 44px;
+  height: 100%;
+  padding-right: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--nexus-primary);
+  border-radius: 8px;
+  transition: width 0.4s ease;
+}
+
+.nexus-funil__conversao {
+  font-size: 12px;
+  text-align: right;
+}
+
+.nexus-funil__etapa--novo_contato .nexus-funil__barra {
+  background: #3b82f6;
+}
+
+.nexus-funil__etapa--qualificacao .nexus-funil__barra {
+  background: #6366f1;
+}
+
+.nexus-funil__etapa--proposta .nexus-funil__barra {
+  background: #f59e0b;
+}
+
+.nexus-funil__etapa--ganho .nexus-funil__barra {
+  background: #16a34a;
+}
+
+.nexus-funil__etapa--perdido .nexus-funil__barra {
+  background: #dc2626;
+}
+
+.nexus-tabela-container {
+  overflow: hidden;
+}
+
+.nexus-coluna-centro {
+  text-align: center;
+}
+
+.nexus-coluna-direita {
+  text-align: right;
+}
+
+.nexus-estado-erro {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+
+  i {
+    font-size: 22px;
+    color: var(--nexus-danger);
+  }
+
+  strong {
+    display: block;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 900px) {
+  .nexus-funil__etapa {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .nexus-funil__conversao {
+    text-align: left;
+  }
+}

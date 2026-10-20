@@ -1,0 +1,167 @@
+.nexus-form-pagina {
+  max-width: 1080px;
+}
+
+.nexus-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--nexus-text-muted);
+
+  i {
+    font-size: 10px;
+  }
+
+  a {
+    color: var(--nexus-text-muted);
+
+    &:hover {
+      color: var(--nexus-primary);
+    }
+  }
+}
+
+.nexus-form-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 16px;
+  align-items: start;
+}
+
+.nexus-form-card {
+  padding: 20px;
+}
+
+.nexus-form-card__cabecalho {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--nexus-border);
+
+  p {
+    margin: 0;
+    font-size: 12.5px;
+  }
+}
+
+.nexus-form-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nexus-grid-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.nexus-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--nexus-text);
+  }
+
+  ::ng-deep .p-select,
+  ::ng-deep .p-datepicker,
+  ::ng-deep .p-datepicker-input,
+  ::ng-deep .p-inputnumber {
+    width: 100%;
+  }
+}
+
+.nexus-campo--completo {
+  grid-column: 1 / -1;
+}
+
+.nexus-invalido {
+  border-color: var(--nexus-danger) !important;
+}
+
+.nexus-erro-campo {
+  font-size: 11.5px;
+  color: var(--nexus-danger);
+}
+
+.nexus-form-lateral {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.nexus-dica {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+
+  i {
+    font-size: 16px;
+    color: var(--nexus-primary);
+  }
+
+  strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+}
+
+.nexus-acoes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.nexus-estado-erro {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+
+  i {
+    font-size: 22px;
+    color: var(--nexus-danger);
+  }
+
+  strong {
+    display: block;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 13px;
+  }
+}
+
+:host ::ng-deep .nexus-botao-largo {
+  width: 100%;
+  justify-content: center;
+}
+
+:host ::ng-deep .nexus-input-largo {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .nexus-form-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .nexus-grid-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

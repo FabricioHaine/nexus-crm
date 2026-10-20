@@ -1,0 +1,76 @@
+<div class="nexus-shell">
+  <aside class="nexus-sidebar" [class.nexus-sidebar--aberta]="menuAberto()">
+    <div class="nexus-brand">
+      <div class="nexus-brand__logo">
+        <i class="pi pi-chart-line"></i>
+      </div>
+      <div class="nexus-brand__texto">
+        <strong>Nexus CRM</strong>
+        <span>Gestao comercial</span>
+      </div>
+    </div>
+
+    <nav class="nexus-menu" aria-label="Navegacao principal">
+      <a
+        *ngFor="let item of itensMenu"
+        class="nexus-menu__item"
+        [routerLink]="item.rota"
+        routerLinkActive="nexus-menu__item--ativo"
+        [routerLinkActiveOptions]="{ exact: false }"
+        (click)="fecharMenu()"
+      >
+        <i [class]="item.icone"></i>
+        <span>{{ item.rotulo }}</span>
+      </a>
+    </nav>
+
+    <div class="nexus-sidebar__rodape">
+      <i class="pi pi-shield"></i>
+      <span>Ambiente local &middot; v1.0.0</span>
+    </div>
+  </aside>
+
+  <div class="nexus-overlay" *ngIf="menuAberto()" (click)="fecharMenu()"></div>
+
+  <div class="nexus-conteudo">
+    <header class="nexus-topbar">
+      <button
+        pButton
+        type="button"
+        class="nexus-topbar__menu p-button-text p-button-rounded nexus-hide-desktop"
+        icon="pi pi-bars"
+        aria-label="Abrir menu"
+        (click)="alternarMenu()"
+      ></button>
+
+      <div class="nexus-topbar__titulos">
+        <h1>{{ titulo() }}</h1>
+        <p *ngIf="subtitulo()">{{ subtitulo() }}</p>
+      </div>
+
+      <div class="nexus-topbar__acoes">
+        <a
+          pButton
+          routerLink="/clientes/novo"
+          label="Novo cliente"
+          icon="pi pi-user-plus"
+          severity="secondary"
+          [outlined]="true"
+          size="small"
+          class="nexus-hide-mobile"
+        ></a>
+        <a
+          pButton
+          routerLink="/oportunidades/novo"
+          label="Nova oportunidade"
+          icon="pi pi-plus"
+          size="small"
+        ></a>
+      </div>
+    </header>
+
+    <main class="nexus-main">
+      <router-outlet />
+    </main>
+  </div>
+</div>

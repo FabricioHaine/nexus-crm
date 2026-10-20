@@ -1,0 +1,96 @@
+<section class="nexus-page">
+  <div *ngIf="erro()" class="nexus-surface nexus-estado-erro">
+    <i class="pi pi-exclamation-triangle"></i>
+    <div>
+      <strong>Nao foi possivel carregar o funil</strong>
+      <p class="nexus-muted">{{ erro() }}</p>
+    </div>
+    <p-button label="Tentar novamente" icon="pi pi-refresh" (onClick)="carregar()" />
+  </div>
+
+  <ng-container *ngIf="!erro()">
+    <div class="nexus-surface nexus-funil-resumo">
+      <div class="nexus-funil-resumo__item">
+        <span class="nexus-muted">Pipeline em aberto</span>
+        <strong class="nexus-valor">{{ valorPipeline() | currency: 'BRL' : 'symbol' : '1.0-0' }}</strong>
+      </div>
+      <div class="nexus-funil-resumo__item">
+        <span class="nexus-muted">Oportunidades</span>
+        <strong class="nexus-valor">{{ resumo()?.totalOportunidades ?? 0 }}</strong>
+      </div>
+      <div class="nexus-funil-resumo__item">
+        <span class="nexus-muted">Taxa de conversao</span>
+        <strong class="nexus-valor">{{ resumo()?.taxaConversao ?? 0 }}%</strong>
+      </div>
+      <div class="nexus-funil-resumo__item">
+        <span class="nexus-muted">Valor ganho</span>
+        <strong class="nexus-valor">
+          {{ valorGanho() | currency: 'BRL' : 'symbol' : '1.0-0' }}
+        </strong>
+      </div>
+    </div>
+
+    <div class="nexus-surface nexus-funil">
+      <header class="nexus-funil__cabecalho">
+        <h2 class="nexus-section-title">Distribuicao por etapa</h2>
+        <span class="nexus-muted">A barra representa a quantidade de oportunidades em cada etapa</span>
+      </header>
+
+      <div *ngIf="carregando()" class="nexus-funil__corpo">
+        <p-skeleton width="100%" height="3rem" styleClass="nexus-skeleton" />
+        <p-skeleton width="100%" height="3rem" styleClass="nexus-skeleton" />
+        <p-skeleton width="100%" height="3rem" styleClass="nexus-skeleton" />
+      </div>
+
+      <div *ngIf="!carregando()" class="nexus-funil__corpo">
+        <div *ngFor="let etapa of etapas()" [class]="'nexus-funil__etapa nexus-funil__etapa--' + etapa.etapa.toLowerCase()">
+          <div class="nexus-funil__rotulo">
+            <strong>{{ etapa.rotulo }}</strong>
+            <span class="nexus-muted nexus-valor">{{ etapa.valorTotal | currency: 'BRL' : 'symbol' : '1.0-0' }}</span>
+          </div>
+
+          <div class="nexus-funil__barra-area">
+            <div class="nexus-funil__barra" [style.width.%]="etapa.percentual">
+              <span>{{ etapa.quantidade }}</span>
+            </div>
+          </div>
+
+          <div class="nexus-funil__conversao">
+            <span *ngIf="etapa.conversaoDaAnterior !== null" class="nexus-muted">
+              {{ etapa.conversaoDaAnterior!.toFixed(0) }}% da etapa anterior
+            </span>
+            <span *ngIf="etapa.conversaoDaAnterior === null" class="nexus-muted">inicio do funil</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nexus-surface nexus-tabela-container">
+      <header class="nexus-funil__cabecalho">
+        <h3 class="nexus-section-title">Detalhamento</h3>
+      </header>
+
+      <p-table [value]="etapas()" [loading]="carregando()" dataKey="etapa">
+        <ng-template #header>
+          <tr>
+            <th>Etapa</th>
+            <th class="nexus-coluna-centro">Quantidade</th>
+            <th class="nexus-coluna-direita">Valor total</th>
+            <th class="nexus-coluna-direita">Participacao</th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-etapa>
+          <tr>
+            <td><strong>{{ etapa.rotulo }}</strong></td>
+            <td class="nexus-coluna-centro nexus-valor">{{ etapa.quantidade }}</td>
+            <td class="nexus-coluna-direita nexus-valor">
+              {{ etapa.valorTotal | currency: 'BRL' : 'symbol' : '1.0-2' }}
+            </td>
+            <td class="nexus-coluna-direita nexus-valor">{{ etapa.percentual.toFixed(1) }}%</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </ng-container>
+</section>

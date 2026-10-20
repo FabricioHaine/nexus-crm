@@ -1,0 +1,179 @@
+<section class="nexus-page nexus-form-pagina">
+  <div class="nexus-breadcrumb">
+    <a routerLink="/oportunidades">Oportunidades</a>
+    <i class="pi pi-angle-right"></i>
+    <span>{{ titulo }}</span>
+  </div>
+
+  <div *ngIf="erro()" class="nexus-surface nexus-estado-erro">
+    <i class="pi pi-exclamation-triangle"></i>
+    <div>
+      <strong>Nao foi possivel carregar a oportunidade</strong>
+      <p class="nexus-muted">{{ erro() }}</p>
+    </div>
+    <a
+      pButton
+      routerLink="/oportunidades"
+      label="Voltar"
+      icon="pi pi-arrow-left"
+      [outlined]="true"
+      size="small"></a>
+  </div>
+
+  <form *ngIf="!erro()" [formGroup]="formulario" (ngSubmit)="salvar()" class="nexus-form-layout">
+    <div class="nexus-surface nexus-form-card">
+      <header class="nexus-form-card__cabecalho">
+        <h2 class="nexus-section-title">Dados da oportunidade</h2>
+        <p class="nexus-muted">Campos marcados com * sao obrigatorios.</p>
+      </header>
+
+      <div *ngIf="carregando()" class="nexus-form-corpo">
+        <p-skeleton width="100%" height="3rem" styleClass="nexus-skeleton" />
+        <p-skeleton width="100%" height="3rem" styleClass="nexus-skeleton" />
+        <p-skeleton width="100%" height="3rem" styleClass="nexus-skeleton" />
+      </div>
+
+      <div *ngIf="!carregando()" class="nexus-form-corpo nexus-grid-form">
+        <div class="nexus-campo nexus-campo--completo">
+          <label for="titulo">Titulo *</label>
+          <input
+            id="titulo"
+            pInputText
+            formControlName="titulo"
+            placeholder="Ex.: Implantacao do CRM"
+            [class.nexus-invalido]="campoInvalido('titulo')"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('titulo')">{{ mensagemDoCampo('titulo') }}</small>
+        </div>
+
+        <div class="nexus-campo nexus-campo--completo">
+          <label for="descricao">Descricao</label>
+          <textarea
+            id="descricao"
+            pInputTextarea
+            rows="3"
+            formControlName="descricao"
+            placeholder="Contexto da negociacao"
+          ></textarea>
+        </div>
+
+        <div class="nexus-campo nexus-campo--completo">
+          <label for="clienteId">Cliente *</label>
+          <p-select
+            inputId="clienteId"
+            formControlName="clienteId"
+            [options]="opcoesCliente()"
+            [filter]="true"
+            placeholder="Selecione o cliente"
+            appendTo="body"
+            [class.nexus-invalido]="campoInvalido('clienteId')"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('clienteId')">
+            {{ mensagemDoCampo('clienteId') }}
+          </small>
+        </div>
+
+        <div class="nexus-campo">
+          <label for="valorEstimado">Valor estimado (R$) *</label>
+          <p-inputnumber
+            inputId="valorEstimado"
+            formControlName="valorEstimado"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            [minFractionDigits]="2"
+            [maxFractionDigits]="2"
+            placeholder="0,00"
+            inputStyleClass="nexus-input-largo"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('valorEstimado')">
+            {{ mensagemDoCampo('valorEstimado') }}
+          </small>
+        </div>
+
+        <div class="nexus-campo">
+          <label for="etapa">Etapa do funil *</label>
+          <p-select
+            inputId="etapa"
+            formControlName="etapa"
+            [options]="opcoesEtapa()"
+            placeholder="Selecione a etapa"
+            appendTo="body"
+            (onChange)="aoMudarEtapa()"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('etapa')">{{ mensagemDoCampo('etapa') }}</small>
+        </div>
+
+        <div class="nexus-campo">
+          <label for="probabilidade">Probabilidade de conversao (%)</label>
+          <p-inputnumber
+            inputId="probabilidade"
+            formControlName="probabilidade"
+            [min]="0"
+            [max]="100"
+            suffix=" %"
+            inputStyleClass="nexus-input-largo"
+          />
+        </div>
+
+        <div class="nexus-campo">
+          <label for="dataPrevistaFechamento">Previsao de fechamento</label>
+          <p-datepicker
+            inputId="dataPrevistaFechamento"
+            formControlName="dataPrevistaFechamento"
+            dateFormat="dd/mm/yy"
+            [showIcon]="true"
+            [minDate]="dataMinima"
+            appendTo="body"
+          />
+        </div>
+
+        <div *ngIf="mostraMotivoPerda" class="nexus-campo nexus-campo--completo">
+          <label for="motivoPerda">Motivo da perda *</label>
+          <textarea
+            id="motivoPerda"
+            pInputTextarea
+            rows="3"
+            formControlName="motivoPerda"
+            placeholder="Ex.: cliente escolheu a concorrencia"
+            [class.nexus-invalido]="campoInvalido('motivoPerda')"
+          ></textarea>
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('motivoPerda')">
+            {{ mensagemDoCampo('motivoPerda') }}
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <aside class="nexus-form-lateral">
+      <div class="nexus-surface nexus-dica">
+        <i class="pi pi-info-circle"></i>
+        <div>
+          <strong>Fluxo do funil</strong>
+          <p class="nexus-muted">
+            Um novo contato avanca para qualificacao, depois para proposta e, por fim, para ganho
+            ou perda. A API recusa transicoes que nao respeitam esse fluxo.
+          </p>
+        </div>
+      </div>
+
+      <div class="nexus-acoes-form">
+        <p-button
+          type="submit"
+          label="Salvar oportunidade"
+          icon="pi pi-check"
+          [loading]="salvando()"
+          [disabled]="carregando()"
+          styleClass="nexus-botao-largo"
+        />
+        <a
+          pButton
+          routerLink="/oportunidades"
+          label="Cancelar"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="nexus-botao-largo"></a>
+      </div>
+    </aside>
+  </form>
+</section>

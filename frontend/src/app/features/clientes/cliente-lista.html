@@ -1,0 +1,160 @@
+<section class="nexus-page">
+  <div class="nexus-surface nexus-toolbar">
+    <div class="nexus-toolbar__busca">
+      <p-iconfield>
+        <p-inputicon class="pi pi-search" />
+        <input
+          pInputText
+          type="text"
+          placeholder="Buscar por nome, e-mail ou empresa..."
+          [ngModel]="termo()"
+          (ngModelChange)="buscar($event)"
+          aria-label="Buscar clientes"
+        />
+      </p-iconfield>
+    </div>
+
+    <div class="nexus-toolbar__acoes">
+      <span class="nexus-muted nexus-total">
+        {{ totalRegistros() }} cliente(s) cadastrado(s)
+      </span>
+      <a
+        pButton
+        routerLink="/clientes/novo"
+        label="Novo cliente"
+        icon="pi pi-user-plus"
+        size="small"></a>
+    </div>
+  </div>
+
+  <div *ngIf="erro()" class="nexus-surface nexus-estado-erro">
+    <i class="pi pi-exclamation-triangle"></i>
+    <div>
+      <strong>Nao foi possivel carregar os clientes</strong>
+      <p class="nexus-muted">{{ erro() }}</p>
+    </div>
+    <p-button label="Tentar novamente" icon="pi pi-refresh" (onClick)="carregar()" />
+  </div>
+
+  <div class="nexus-surface nexus-tabela-container">
+    <p-table
+      [value]="clientes()"
+      [lazy]="true"
+      [paginator]="true"
+      [rows]="tamanhoPagina()"
+      [first]="primeiraPagina()"
+      [totalRecords]="totalRegistros()"
+      [loading]="carregando()"
+      [rowsPerPageOptions]="[10, 20, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="{first} a {last} de {totalRecords} clientes"
+      [scrollable]="true"
+      (onLazyLoad)="aoMudarPagina($event)"
+      (onSort)="aoOrdenar($event)"
+      sortField="nome"
+      [sortOrder]="1"
+      dataKey="id"
+    >
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="nome">Cliente <p-sortIcon field="nome" /></th>
+          <th pSortableColumn="empresa">Empresa <p-sortIcon field="empresa" /></th>
+          <th pSortableColumn="email">Contato <p-sortIcon field="email" /></th>
+          <th class="nexus-coluna-centro">Oportunidades</th>
+          <th pSortableColumn="dataCadastro">Cadastro <p-sortIcon field="dataCadastro" /></th>
+          <th class="nexus-coluna-acoes">Acoes</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-cliente>
+        <tr>
+          <td>
+            <div class="nexus-cliente">
+              <span class="nexus-cliente__avatar">{{ cliente.nome.charAt(0).toUpperCase() }}</span>
+              <div class="nexus-cliente__dados">
+                <strong>{{ cliente.nome }}</strong>
+                <span *ngIf="cliente.cargo">{{ cliente.cargo }}</span>
+              </div>
+            </div>
+          </td>
+          <td>{{ cliente.empresa || '-' }}</td>
+          <td>
+            <div class="nexus-contato">
+              <a [href]="'mailto:' + cliente.email">{{ cliente.email }}</a>
+              <span *ngIf="cliente.telefone">{{ cliente.telefone }}</span>
+            </div>
+          </td>
+          <td class="nexus-coluna-centro">
+            <p-tag
+              [value]="cliente.totalOportunidades.toString()"
+              [severity]="cliente.totalOportunidades > 0 ? 'info' : 'secondary'"
+              [rounded]="true"
+            />
+          </td>
+          <td>{{ cliente.dataCadastro | date: 'dd/MM/yyyy' }}</td>
+          <td class="nexus-coluna-acoes">
+            <div class="nexus-acoes">
+              <button
+                pButton
+                type="button"
+                icon="pi pi-eye"
+                severity="secondary"
+                [text]="true"
+                pTooltip="Ver detalhes"
+                tooltipPosition="top"
+                aria-label="Ver detalhes"
+                (click)="abrirDetalhe(cliente)"
+              ></button>
+              <a
+                pButton
+                icon="pi pi-pencil"
+                severity="secondary"
+                [text]="true"
+                pTooltip="Editar"
+                tooltipPosition="top"
+                aria-label="Editar"
+                [routerLink]="['/clientes', cliente.id, 'editar']"
+              ></a>
+              <button
+                pButton
+                type="button"
+                icon="pi pi-trash"
+                severity="danger"
+                [text]="true"
+                pTooltip="Excluir"
+                tooltipPosition="top"
+                aria-label="Excluir"
+                (click)="confirmarExclusao(cliente)"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="6">
+            <div class="nexus-vazio">
+              <i class="pi pi-inbox"></i>
+              <strong>Nenhum cliente encontrado</strong>
+              <p class="nexus-muted">
+                {{
+                  termo()
+                    ? 'Nenhum resultado para a busca realizada. Ajuste o termo ou cadastre um novo cliente.'
+                    : 'Comece cadastrando o primeiro cliente da sua base.'
+                }}
+              </p>
+              <a
+                *ngIf="!termo()"
+                pButton
+                routerLink="/clientes/novo"
+                label="Cadastrar cliente"
+                icon="pi pi-user-plus"
+                size="small"></a>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</section>

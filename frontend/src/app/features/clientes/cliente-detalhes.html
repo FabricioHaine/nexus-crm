@@ -1,0 +1,190 @@
+<section class="nexus-page">
+  <div class="nexus-breadcrumb">
+    <a routerLink="/clientes">Clientes</a>
+    <i class="pi pi-angle-right"></i>
+    <span>Detalhes</span>
+  </div>
+
+  <div *ngIf="erro()" class="nexus-surface nexus-estado-erro">
+    <i class="pi pi-exclamation-triangle"></i>
+    <div>
+      <strong>Cliente nao encontrado</strong>
+      <p class="nexus-muted">{{ erro() }}</p>
+    </div>
+    <a pButton routerLink="/clientes" label="Voltar" icon="pi pi-arrow-left" [outlined]="true" size="small"></a>
+  </div>
+
+  <ng-container *ngIf="!erro()">
+    <div class="nexus-surface nexus-detalhes-cabecalho">
+      <div *ngIf="carregando()" class="nexus-detalhes-cabecalho__conteudo">
+        <p-skeleton shape="circle" size="3.5rem" styleClass="nexus-skeleton" />
+        <div class="nexus-detalhes-identidade">
+          <p-skeleton width="220px" height="1.2rem" styleClass="nexus-skeleton" />
+          <p-skeleton width="160px" height="0.8rem" styleClass="nexus-skeleton" />
+        </div>
+      </div>
+
+      <div *ngIf="!carregando() && cliente() as dados" class="nexus-detalhes-cabecalho__conteudo">
+        <span class="nexus-avatar-grande">{{ dados.nome.charAt(0).toUpperCase() }}</span>
+
+        <div class="nexus-detalhes-identidade">
+          <h2>{{ dados.nome }}</h2>
+          <p>
+            <span *ngIf="dados.empresa">{{ dados.empresa }}</span>
+            <span *ngIf="dados.empresa && dados.cargo"> &middot; </span>
+            <span *ngIf="dados.cargo">{{ dados.cargo }}</span>
+          </p>
+        </div>
+
+        <div class="nexus-detalhes-acoes">
+          <a
+            pButton
+            [routerLink]="['/clientes', dados.id, 'editar']"
+            label="Editar"
+            icon="pi pi-pencil"
+            severity="secondary"
+            [outlined]="true"
+            size="small"></a>
+          <p-button
+            label="Excluir"
+            icon="pi pi-trash"
+            severity="danger"
+            [outlined]="true"
+            size="small"
+            (onClick)="confirmarExclusao()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="nexus-detalhes-grade">
+      <div class="nexus-surface nexus-ficha">
+        <h3 class="nexus-section-title">Informacoes de contato</h3>
+
+        <div *ngIf="carregando()" class="nexus-ficha__lista">
+          <p-skeleton width="100%" height="1.6rem" styleClass="nexus-skeleton" />
+          <p-skeleton width="100%" height="1.6rem" styleClass="nexus-skeleton" />
+          <p-skeleton width="100%" height="1.6rem" styleClass="nexus-skeleton" />
+        </div>
+
+        <dl *ngIf="!carregando() && cliente() as dados" class="nexus-ficha__lista">
+          <div>
+            <dt>E-mail</dt>
+            <dd><a [href]="'mailto:' + dados.email">{{ dados.email }}</a></dd>
+          </div>
+          <div>
+            <dt>Telefone</dt>
+            <dd>{{ dados.telefone || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Empresa</dt>
+            <dd>{{ dados.empresa || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Cargo</dt>
+            <dd>{{ dados.cargo || '-' }}</dd>
+          </div>
+          <div>
+            <dt>Cadastro</dt>
+            <dd>{{ dados.dataCadastro | date: 'dd/MM/yyyy HH:mm' }}</dd>
+          </div>
+          <div>
+            <dt>Ultima atualizacao</dt>
+            <dd>{{ dados.dataAtualizacao | date: 'dd/MM/yyyy HH:mm' }}</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="nexus-surface nexus-ficha">
+        <h3 class="nexus-section-title">Observacoes</h3>
+        <p *ngIf="!carregando()" class="nexus-observacoes">
+          {{ cliente()?.observacoes || 'Nenhuma observacao registrada para este cliente.' }}
+        </p>
+      </div>
+    </div>
+
+    <div class="nexus-surface nexus-tabela-container">
+      <header class="nexus-tabela-titulo">
+        <h3 class="nexus-section-title">Oportunidades do cliente</h3>
+        <a
+          pButton
+          routerLink="/oportunidades/novo"
+          label="Nova oportunidade"
+          icon="pi pi-plus"
+          size="small"
+          severity="secondary"
+          [outlined]="true"></a>
+      </header>
+
+      <p-table
+        [value]="oportunidades()"
+        [loading]="carregando()"
+        [scrollable]="true"
+        dataKey="id"
+      >
+        <ng-template #header>
+          <tr>
+            <th>Oportunidade</th>
+            <th>Etapa</th>
+            <th class="nexus-coluna-centro">Probabilidade</th>
+            <th class="nexus-coluna-direita">Valor estimado</th>
+            <th class="nexus-coluna-direita">Previsao</th>
+            <th class="nexus-coluna-acoes"></th>
+          </tr>
+        </ng-template>
+
+        <ng-template #body let-oportunidade>
+          <tr>
+            <td>
+              <strong>{{ oportunidade.titulo }}</strong>
+            </td>
+            <td>
+              <p-tag
+                [value]="oportunidade.etapaDescricao"
+                [severity]="etapaSeveridade(oportunidade.etapa)"
+                [rounded]="true"
+              />
+            </td>
+            <td class="nexus-coluna-centro">{{ oportunidade.probabilidade }}%</td>
+            <td class="nexus-coluna-direita nexus-valor">
+              {{ oportunidade.valorEstimado | currency: 'BRL' : 'symbol' : '1.0-2' }}
+            </td>
+            <td class="nexus-coluna-direita">
+              {{ oportunidade.dataPrevistaFechamento ? (oportunidade.dataPrevistaFechamento | date: 'dd/MM/yyyy') : '-' }}
+            </td>
+            <td class="nexus-coluna-acoes">
+              <a
+                pButton
+                icon="pi pi-pencil"
+                severity="secondary"
+                [text]="true"
+                pTooltip="Editar"
+                tooltipPosition="top"
+                aria-label="Editar oportunidade"
+                [routerLink]="['/oportunidades', oportunidade.id, 'editar']"
+              ></a>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+          <tr>
+            <td colspan="6">
+              <div class="nexus-vazio">
+                <i class="pi pi-briefcase"></i>
+                <strong>Nenhuma oportunidade registrada</strong>
+                <p class="nexus-muted">Crie a primeira negociacao para este cliente.</p>
+                <a
+                  pButton
+                  routerLink="/oportunidades/novo"
+                  label="Criar oportunidade"
+                  icon="pi pi-plus"
+                  size="small"></a>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </ng-container>
+</section>
