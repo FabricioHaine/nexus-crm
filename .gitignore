@@ -1,0 +1,61 @@
+# ============================================================================
+# Nexus CRM - arquivos que nao devem ser versionados
+# ============================================================================
+
+# --- Java / Maven -----------------------------------------------------------
+target/
+*.jar
+*.war
+*.class
+.mvn/wrapper/maven-wrapper.jar
+!.mvn/wrapper/maven-wrapper.properties
+
+# --- Backend - banco H2 local -----------------------------------------------
+backend/data/
+*.mv.db
+*.trace.db
+
+# --- Frontend - Angular / Node ----------------------------------------------
+node_modules/
+dist/
+.angular/
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Logs e arquivos temporarios --------------------------------------------
+*.log
+logs/
+tmp/
+temp/
+
+# --- Segredos e variaveis de ambiente ----------------------------------------
+.env
+.env.*
+!.env.example
+application-local.properties
+application-prod.properties
+secrets.json
+*.pem
+*.key
+
+# --- IDEs -------------------------------------------------------------------
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
+!.vscode/settings.json
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Sistemas operacionais ---------------------------------------------------
+.vs/
+Screenshots/

@@ -1,0 +1,173 @@
+/* ==========================================================================
+   Nexus CRM - estilos globais e design tokens
+   ========================================================================== */
+
+:root {
+  /* Paleta institucional */
+  --nexus-navy-900: #0a1c33;
+  --nexus-navy-800: #0f2748;
+  --nexus-navy-700: #16355c;
+  --nexus-navy-600: #1d4373;
+
+  --nexus-primary: #2563eb;
+  --nexus-primary-dark: #1d4ed8;
+  --nexus-primary-soft: #eff4ff;
+
+  --nexus-success: #16a34a;
+  --nexus-success-soft: #ecfdf3;
+  --nexus-warning: #d97706;
+  --nexus-warning-soft: #fff8eb;
+  --nexus-danger: #dc2626;
+  --nexus-danger-soft: #fef2f2;
+  --nexus-info: #0891b2;
+
+  --nexus-bg: #f4f6fa;
+  --nexus-surface: #ffffff;
+  --nexus-border: #e3e8ef;
+  --nexus-border-strong: #cfd6e0;
+
+  --nexus-text: #16202e;
+  --nexus-text-muted: #64748b;
+  --nexus-text-soft: #94a3b8;
+
+  --nexus-radius-sm: 6px;
+  --nexus-radius: 10px;
+  --nexus-radius-lg: 14px;
+
+  --nexus-shadow-sm: 0 1px 2px rgba(15, 39, 72, 0.06);
+  --nexus-shadow: 0 2px 10px rgba(15, 39, 72, 0.07);
+  --nexus-shadow-lg: 0 12px 32px rgba(15, 39, 72, 0.12);
+
+  --nexus-sidebar-width: 258px;
+  --nexus-topbar-height: 66px;
+
+  --nexus-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--nexus-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--nexus-text);
+  background-color: var(--nexus-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  font-weight: 600;
+  color: var(--nexus-text);
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--nexus-primary);
+  text-decoration: none;
+}
+
+/* --- Utilitarios ------------------------------------------------------------ */
+.nexus-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.nexus-surface {
+  background: var(--nexus-surface);
+  border: 1px solid var(--nexus-border);
+  border-radius: var(--nexus-radius-lg);
+  box-shadow: var(--nexus-shadow-sm);
+}
+
+.nexus-section-title {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.nexus-muted {
+  color: var(--nexus-text-muted);
+}
+
+.nexus-valor {
+  font-variant-numeric: tabular-nums;
+}
+
+.nexus-grid {
+  display: grid;
+  gap: 16px;
+}
+
+/* --- Ajustes PrimeNG ------------------------------------------------------- */
+.p-component {
+  font-family: var(--nexus-font);
+}
+
+.p-card {
+  border: 1px solid var(--nexus-border);
+  border-radius: var(--nexus-radius-lg);
+  box-shadow: var(--nexus-shadow-sm);
+}
+
+.p-button {
+  font-weight: 500;
+}
+
+.p-datatable .p-datatable-thead > tr > th {
+  background: #f8fafc;
+  color: var(--nexus-text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-color: var(--nexus-border);
+}
+
+.p-datatable .p-datatable-tbody > tr {
+  transition: background-color 0.15s ease;
+}
+
+.p-datatable .p-datatable-tbody > tr:hover {
+  background: #f8fafc;
+}
+
+.p-tag {
+  font-weight: 600;
+  font-size: 11.5px;
+}
+
+.p-dialog .p-dialog-header {
+  border-radius: var(--nexus-radius-lg) var(--nexus-radius-lg) 0 0;
+}
+
+.p-dialog .p-dialog-content {
+  padding-top: 0.5rem;
+}
+
+.p-toast {
+  max-width: 26rem;
+}
+
+.p-tooltip-text {
+  font-size: 12px;
+}
+
+/* --- Responsivo ------------------------------------------------------------ */
+@media (max-width: 768px) {
+  .nexus-hide-mobile {
+    display: none !important;
+  }
+}
