@@ -59,3 +59,10 @@ desktop.ini
 # --- Sistemas operacionais ---------------------------------------------------
 .vs/
 /Screenshots/
+
+# --- JDKs locais ------------------------------------------------------------
+# Instalacoes de JDK baixadas dentro da pasta do projeto (Oracle JDK, Temurin, etc).
+# Sao binarios grandes e nao pertencem ao codigo-fonte.
+oracleJdk-*/
+jdk-*/
+/java-*/
