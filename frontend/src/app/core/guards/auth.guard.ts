@@ -1,23 +1,25 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 
-import { AuthService } from '../services/auth.service';
 import { Usuario } from '../models/usuario.model';
+import { AuthService } from '../services/auth.service';
 
 /**
  * Protege as rotas internas: exige uma sessao ativa e, quando o perfil
  * necessario e informado, que o usuario o possua.
  */
-export const authGuard: CanActivateFn = (rota) => {
+export const authGuard: CanActivateFn = async (rota) => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  if (!authService.autenticado()) {
+  const usuario = await authService.garantirSessao();
+
+  if (!usuario) {
     return router.createUrlTree(['/login'], { queryParams: { redirecionar: rota.url } });
   }
 
   const papeis = rota.data?.['papeis'] as Usuario['papel'][] | undefined;
-  if (papeis && papeis.length > 0 && !authService.temPapel(...papeis)) {
+  if (papeis && papeis.length > 0 && !papeis.includes(usuario.papel)) {
     return router.createUrlTree(['/dashboard']);
   }
 
@@ -27,9 +29,11 @@ export const authGuard: CanActivateFn = (rota) => {
 /**
  * Impede que um usuario autenticado acesse a tela de login ou de cadastro.
  */
-export const guestGuard: CanActivateFn = () => {
+export const guestGuard: CanActivateFn = async () => {
   const authService = inject(AuthService);
   const router = inject(Router);
 
-  return authService.autenticado() ? router.createUrlTree(['/dashboard']) : true;
+  const usuario = await authService.garantirSessao();
+
+  return usuario ? router.createUrlTree(['/dashboard']) : true;
 };

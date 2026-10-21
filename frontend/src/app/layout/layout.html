@@ -68,13 +68,11 @@
         ></a>
 
         <div class="nexus-usuario" *ngIf="usuario() as sessao">
-          <span class="nexus-usuario__avatar" [pTooltip]="perfilAtual()" tooltipPosition="bottom">
-            {{ iniciais() }}
-          </span>
-          <div class="nexus-usuario__dados">
+          <a class="nexus-usuario__dados" routerLink="/conta" pTooltip="Minha conta" tooltipPosition="bottom">
             <strong>{{ sessao.nome }}</strong>
             <span>{{ perfilAtual() }}</span>
-          </div>
+          </a>
+          <span class="nexus-usuario__avatar">{{ iniciais() }}</span>
           <button
             pButton
             type="button"

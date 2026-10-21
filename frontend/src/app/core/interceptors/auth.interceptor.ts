@@ -1,30 +1,48 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, throwError } from 'rxjs';
+import { catchError, switchMap, throwError } from 'rxjs';
 
 import { AuthService } from '../services/auth.service';
 
 /**
- * Adiciona o token de acesso no cabecalho `Authorization` de toda requisicao
- * enviada a API.
+ * Prepara as requisicoes enviadas a API.
  *
- * <p>Quando a API responde 401 (token expirado ou invalido), a sessao local e
- * encerrada para que o usuario volte a tela de login.</p>
+ * <ul>
+ *   <li>Envia as credenciais da sessao (o cookie {@code HttpOnly} e
+ *       anexado automaticamente);</li>
+ *   <li>Quando a API responde 401, tenta renovar a sessao uma unica vez e
+ *       repete a requisicao original.</li>
+ * </ul>
+ *
+ * <p>O token de CSRF e Carecido pelo proprio {@code HttpClient} do Angular,
+ * que copia o cookie {@code XSRF-TOKEN} para o cabecalho
+ * {@code X-XSRF-TOKEN} nas requisicoes de escrita.</p>
  */
 export const authInterceptor: HttpInterceptorFn = (requisicao, proximo) => {
   const authService = inject(AuthService);
-  const token = authService.token();
 
-  const requisicaoAutenticada = token
-    ? requisicao.clone({ setHeaders: { Authorization: `${'Bearer'} ${token}` } })
-    : requisicao;
+  const requisicaoComCredenciais = requisicao.clone({ withCredentials: true });
 
-  return proximo(requisicaoAutenticada).pipe(
+  return proximo(requisicaoComCredenciais).pipe(
     catchError((erro) => {
-      if (erro instanceof HttpErrorResponse && erro.status === 401) {
-        authService.logout();
+      const ehFalhaDeSessao = erro instanceof HttpErrorResponse && erro.status === 401;
+      const ehRotaDeAutenticacao = requisicao.url.includes('/auth/');
+
+      if (!ehFalhaDeSessao || ehRotaDeAutenticacao) {
+        return throwError(() => erro);
       }
-      return throwError(() => erro);
+
+      return authService.renovar().pipe(
+        switchMap((usuario) =>
+          usuario
+            ? proximo(requisicaoComCredenciais)
+            : throwError(() => erro),
+        ),
+        catchError((erroFinal) => {
+          authService.logout();
+          return throwError(() => erroFinal);
+        }),
+      );
     }),
   );
 };

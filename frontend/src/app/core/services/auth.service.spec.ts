@@ -20,7 +20,6 @@ describe('AuthService', () => {
   };
 
   beforeEach(() => {
-    localStorage.clear();
     TestBed.configureTestingModule({
       providers: [provideHttpClient(), provideHttpClientTesting()],
     });
@@ -30,10 +29,9 @@ describe('AuthService', () => {
 
   afterEach(() => {
     httpMock.verify();
-    localStorage.clear();
   });
 
-  it('deve autenticar e armazenar o token devolvido pela API', () => {
+  it('deve autenticar e guardar o usuario da sessao', () => {
     service.login({ email: usuario.email, senha: 'Nexus@2026' }).subscribe();
 
     const requisicao = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
@@ -47,10 +45,8 @@ describe('AuthService', () => {
       usuario,
     });
 
-    expect(service.token()).toBe('token-jwt');
     expect(service.usuario()?.papel).toBe('ADMIN');
     expect(service.autenticado()).toBe(true);
-    expect(localStorage.getItem('nexus-crm.token')).toBe('token-jwt');
   });
 
   it('deve cadastrar um novo usuario e iniciar a sessao', () => {
@@ -61,19 +57,26 @@ describe('AuthService', () => {
 
     requisicao.flush({ token: 'token-novo', tipo: 'Bearer', expiraEm: '2026-10-20T22:00:00', usuario });
 
-    expect(service.token()).toBe('token-novo');
+    expect(service.usuario()?.email).toBe(usuario.email);
   });
 
-  it('deve encerrar a sessao e limpar o armazenamento local', () => {
-    localStorage.setItem('nexus-crm.token', 'token-jwt');
-    localStorage.setItem('nexus-crm.usuario', JSON.stringify(usuario));
+  it('deve encerrar a sessao e limpar o estado local', () => {
+    service.login({ email: usuario.email, senha: 'Nexus@2026' }).subscribe();
+    httpMock.expectOne(`${environment.apiUrl}/auth/login`).flush({
+      token: 'token-jwt',
+      tipo: 'Bearer',
+      expiraEm: '2026-10-20T22:00:00',
+      usuario,
+    });
 
-    service.logout();
+    service.logout().subscribe();
 
-    expect(service.token()).toBeNull();
+    const requisicao = httpMock.expectOne(`${environment.apiUrl}/auth/logout`);
+    expect(requisicao.request.method).toBe('POST');
+    requisicao.flush(null);
+
     expect(service.usuario()).toBeNull();
     expect(service.autenticado()).toBe(false);
-    expect(localStorage.getItem('nexus-crm.token')).toBeNull();
   });
 
   it('deve informar o perfil do usuario autenticado', () => {
@@ -101,5 +104,48 @@ describe('AuthService', () => {
     });
 
     expect(service.podeExcluir()).toBe(false);
+  });
+
+  it('deve consultar a sessao no servidor uma unica vez', async () => {
+    const promessa = service.garantirSessao();
+    const segunda = service.garantirSessao();
+
+    const requisicao = httpMock.expectOne(`${environment.apiUrl}/auth/me`);
+    expect(requisicao.request.method).toBe('GET');
+    requisicao.flush(usuario);
+
+    await promessa;
+    await segunda;
+
+    expect(service.usuario()?.papel).toBe('ADMIN');
+    expect(service.sessaoCarregada()).toBe(true);
+
+    // Uma segunda chamada nao deve gerar nova requisicao.
+    await service.garantirSessao();
+    httpMock.expectNone(`${environment.apiUrl}/auth/me`);
+  });
+
+  it('deve considerar sem sessao quando o servidor recusa a consulta', async () => {
+    const promessa = service.garantirSessao();
+    httpMock
+      .expectOne(`${environment.apiUrl}/auth/me`)
+      .flush({ status: 401, mensagem: 'Nao autenticado' }, { status: 401, statusText: 'Unauthorized' });
+
+    await promessa;
+
+    expect(service.usuario()).toBeNull();
+    expect(service.autenticado()).toBe(false);
+  });
+
+  it('deve renovar a sessao e manter o usuario', () => {
+    service.renovar().subscribe((renovado) => {
+      expect(renovado?.papel).toBe('ADMIN');
+    });
+
+    const requisicao = httpMock.expectOne(`${environment.apiUrl}/auth/refresh`);
+    expect(requisicao.request.method).toBe('POST');
+    requisicao.flush({ token: 'novo', tipo: 'Bearer', expiraEm: '2026-10-20T22:00:00', usuario });
+
+    expect(service.usuario()?.email).toBe(usuario.email);
   });
 });

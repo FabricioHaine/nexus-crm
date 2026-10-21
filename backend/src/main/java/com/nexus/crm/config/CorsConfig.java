@@ -7,7 +7,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * Configuracao de CORS restrita aos enderecos locais do front-end.
- * Em producao, ajuste a propriedade app.cors.origins para o dominio real.
+ *
+ * <p>Como a sessao usa cookie, o envio de credenciais e permitido — por isso
+ * a lista de origens e explicita e nunca curinga. Em producao, ajuste a
+ * propriedade {@code app.cors.origins} para o dominio real.</p>
  */
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
@@ -24,6 +27,8 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedOrigins(origensPermitidas)
                 .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
+                .exposedHeaders("Set-Cookie")
+                .allowCredentials(true)
                 .maxAge(3600);
     }
 }

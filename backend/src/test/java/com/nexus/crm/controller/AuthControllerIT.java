@@ -5,6 +5,7 @@ import com.nexus.crm.model.Cliente;
 import com.nexus.crm.model.Papel;
 import com.nexus.crm.model.Usuario;
 import com.nexus.crm.repository.ClienteRepository;
+import com.nexus.crm.repository.TokenRefreshRepository;
 import com.nexus.crm.repository.UsuarioRepository;
 import com.nexus.crm.support.TesteAutenticado;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,9 @@ class AuthControllerIT extends TesteAutenticado {
     private UsuarioRepository usuarioRepository;
 
     @Autowired
+    private TokenRefreshRepository tokenRefreshRepository;
+
+    @Autowired
     private ClienteRepository clienteRepository;
 
     @Autowired
@@ -53,6 +57,7 @@ class AuthControllerIT extends TesteAutenticado {
     @BeforeEach
     void prepararBase() {
         clienteRepository.deleteAll();
+        tokenRefreshRepository.deleteAll();
         usuarioRepository.findAll().stream()
                 .filter(usuario -> !"admin@teste.local".equals(usuario.getEmail()))
                 .forEach(usuarioRepository::delete);

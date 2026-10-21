@@ -1,0 +1,85 @@
+<section class="nexus-page nexus-conta">
+  <div class="nexus-surface nexus-conta__cartao">
+    <header class="nexus-conta__cabecalho">
+      <span class="nexus-conta__avatar">{{ (usuario()?.nome ?? '?').charAt(0).toUpperCase() }}</span>
+      <div>
+        <h2 class="nexus-section-title">{{ usuario()?.nome }}</h2>
+        <p class="nexus-muted">{{ usuario()?.email }} &middot; {{ rotuloPapel() }}</p>
+      </div>
+    </header>
+
+    <div class="nexus-conta__corpo">
+      <h3>Alterar senha</h3>
+      <p class="nexus-muted">
+        A nova senha deve ter ao menos 8 caracteres, com letras e numeros. Ao alterar a senha, as
+        outras sessoes abertas sao encerradas.
+      </p>
+
+      <div *ngIf="erro()" class="nexus-conta__erro">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span>{{ erro() }}</span>
+      </div>
+
+      <form [formGroup]="formulario" (ngSubmit)="trocarSenha()" class="nexus-conta__form">
+        <div class="nexus-campo">
+          <label for="senhaAtual">Senha atual</label>
+          <p-password
+            inputId="senhaAtual"
+            formControlName="senhaAtual"
+            placeholder="Sua senha atual"
+            [feedback]="false"
+            [toggleMask]="true"
+            autocomplete="current-password"
+            styleClass="nexus-senha"
+            [class.nexus-invalido]="campoInvalido('senhaAtual')"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('senhaAtual')">
+            {{ mensagemDoCampo('senhaAtual') }}
+          </small>
+        </div>
+
+        <div class="nexus-campo">
+          <label for="novaSenha">Nova senha</label>
+          <p-password
+            inputId="novaSenha"
+            formControlName="novaSenha"
+            placeholder="Minimo de 8 caracteres"
+            [feedback]="false"
+            [toggleMask]="true"
+            autocomplete="new-password"
+            styleClass="nexus-senha"
+            [class.nexus-invalido]="campoInvalido('novaSenha')"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('novaSenha')">
+            {{ mensagemDoCampo('novaSenha') }}
+          </small>
+        </div>
+
+        <div class="nexus-campo">
+          <label for="confirmacao">Confirmar nova senha</label>
+          <p-password
+            inputId="confirmacao"
+            formControlName="confirmacao"
+            placeholder="Repita a nova senha"
+            [feedback]="false"
+            [toggleMask]="true"
+            autocomplete="new-password"
+            styleClass="nexus-senha"
+            [class.nexus-invalido]="campoInvalido('confirmacao')"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('confirmacao')">
+            {{ mensagemDoCampo('confirmacao') }}
+          </small>
+        </div>
+
+        <p-button
+          type="submit"
+          label="Alterar senha"
+          icon="pi pi-key"
+          [loading]="salvando()"
+          styleClass="nexus-botao-largo"
+        />
+      </form>
+    </div>
+  </div>
+</section>

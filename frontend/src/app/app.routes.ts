@@ -4,6 +4,7 @@ import { authGuard, guestGuard } from './core/guards/auth.guard';
 import { ClienteDetalhes } from './features/clientes/cliente-detalhes';
 import { ClienteForm } from './features/clientes/cliente-form';
 import { ClienteLista } from './features/clientes/cliente-lista';
+import { ContaPage } from './features/conta/conta-page';
 import { DashboardPage } from './features/dashboard/dashboard-page';
 import { ErroPage } from './features/erro/erro-page';
 import { FunilPage } from './features/funil/funil-page';
@@ -86,6 +87,12 @@ export const routes: Routes = [
         component: FunilPage,
         title: 'Funil comercial | Nexus CRM',
         data: { titulo: 'Funil comercial', subtitulo: 'Distribuicao das negociacoes por etapa' },
+      },
+      {
+        path: 'conta',
+        component: ContaPage,
+        title: 'Minha conta | Nexus CRM',
+        data: { titulo: 'Minha conta', subtitulo: 'Dados de acesso e seguranca' },
       },
       {
         path: 'usuarios',

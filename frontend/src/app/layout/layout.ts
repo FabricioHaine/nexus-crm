@@ -56,6 +56,7 @@ export class Layout {
     { rotulo: 'Clientes', icone: 'pi pi-users', rota: '/clientes' },
     { rotulo: 'Oportunidades', icone: 'pi pi-briefcase', rota: '/oportunidades' },
     { rotulo: 'Funil comercial', icone: 'pi pi-chart-bar', rota: '/funil' },
+    { rotulo: 'Minha conta', icone: 'pi pi-user', rota: '/conta' },
     { rotulo: 'Usuarios', icone: 'pi pi-id-card', rota: '/usuarios', apenasAdmin: true },
   ];
 
@@ -87,9 +88,10 @@ export class Layout {
 
   /** Encerra a sessao e devolve o usuario para a tela de login. */
   sair(): void {
-    this.authService.logout();
     this.fecharMenu();
-    this.router.navigate(['/login']);
+    this.authService.logout().subscribe(() => {
+      this.router.navigate(['/login']);
+    });
   }
 
   private dadosDaRotaAtual(): { titulo: string; subtitulo: string } {

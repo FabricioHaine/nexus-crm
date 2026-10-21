@@ -11,6 +11,8 @@ import com.nexus.crm.model.Usuario;
 import com.nexus.crm.repository.UsuarioRepository;
 import com.nexus.crm.security.JwtService;
 import com.nexus.crm.security.UsuarioPrincipal;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +20,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * Regras de negocio da autenticacao: cadastro, login e consulta de usuarios.
+ * Regras de negocio da autenticacao: cadastro, login, renovacao e consulta
+ * de usuarios.
  */
 @Service
 public class AuthService {
@@ -26,19 +29,24 @@ public class AuthService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final SessaoService sessaoService;
 
-    public AuthService(UsuarioRepository usuarioRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(UsuarioRepository usuarioRepository,
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService,
+                       SessaoService sessaoService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.sessaoService = sessaoService;
     }
 
     /**
-     * Cadastra um novo usuario e devolve o token de acesso.
+     * Cadastra um novo usuario, abre a sessao e devolve o token.
      * O perfil definido no cadastro publico e sempre {@code VENDEDOR}.
      */
     @Transactional
-    public LoginResponse registrar(RegistroRequest request) {
+    public LoginResponse registrarEEmitir(RegistroRequest request, HttpServletResponse response) {
         String email = request.email().trim().toLowerCase();
 
         if (usuarioRepository.existsByEmailIgnoreCase(email)) {
@@ -52,14 +60,16 @@ public class AuthService {
         usuario.setPapel(Papel.VENDEDOR);
         usuario.setAtivo(true);
 
-        return emitirToken(usuarioRepository.save(usuario));
+        Usuario salvo = usuarioRepository.save(usuario);
+        sessaoService.emitir(salvo, response);
+        return resposta(salvo);
     }
 
     /**
-     * Valida as credenciais e devolve o token de acesso.
+     * Valida as credenciais, abre a sessao e devolve o token.
      */
-    @Transactional(readOnly = true)
-    public LoginResponse autenticar(LoginRequest request) {
+    @Transactional
+    public LoginResponse autenticarEEmitir(LoginRequest request, HttpServletResponse response) {
         String email = request.email().trim().toLowerCase();
 
         Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
@@ -73,7 +83,45 @@ public class AuthService {
             throw new AutenticacaoFalhouException("Usuario desativado. Procure o administrador do sistema.");
         }
 
-        return emitirToken(usuario);
+        sessaoService.emitir(usuario, response);
+        return resposta(usuario);
+    }
+
+    /**
+     * Renova a sessao a partir do token de renovacao.
+     */
+    @Transactional
+    public LoginResponse renovar(HttpServletRequest request, HttpServletResponse response) {
+        Usuario usuario = sessaoService.renovar(request, response);
+        if (usuario == null) {
+            throw new AutenticacaoFalhouException("Sessao expirada. Entre novamente.");
+        }
+        return resposta(usuario);
+    }
+
+    /**
+     * Troca a senha do usuario autenticado.
+     *
+     * <p>Todas as outras sessoes do usuario sao revogadas, para que uma senha
+     * comprometida nao continue valendo em outro dispositivo.</p>
+     */
+    @Transactional
+    public void trocarSenha(String email, String senhaAtual, String novaSenha) {
+        Usuario usuario = usuarioRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new AutenticacaoFalhouException("Usuario nao encontrado."));
+
+        if (!passwordEncoder.matches(senhaAtual, usuario.getSenhaHash())) {
+            throw new AutenticacaoFalhouException("A senha atual esta incorreta.");
+        }
+
+        if (passwordEncoder.matches(novaSenha, usuario.getSenhaHash())) {
+            throw new ConflitoDeRegraException("A nova senha deve ser diferente da atual.");
+        }
+
+        usuario.setSenhaHash(passwordEncoder.encode(novaSenha));
+        usuarioRepository.save(usuario);
+
+        sessaoService.revogarSessoesDoUsuario(usuario.getId());
     }
 
     /**
@@ -115,10 +163,10 @@ public class AuthService {
         return paraResponse(usuarioRepository.save(usuario));
     }
 
-    private LoginResponse emitirToken(Usuario usuario) {
+    private LoginResponse resposta(Usuario usuario) {
         UsuarioPrincipal principal = UsuarioPrincipal.de(usuario);
-        String token = jwtService.gerarToken(principal);
-        return new LoginResponse(token, "Bearer", jwtService.getExpiracao(), paraResponse(usuario));
+        return new LoginResponse(jwtService.gerarToken(principal), "Bearer", jwtService.getExpiracao(),
+                paraResponse(usuario));
     }
 
     private static UsuarioResponse paraResponse(Usuario usuario) {
