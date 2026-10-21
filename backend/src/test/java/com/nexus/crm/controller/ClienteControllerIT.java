@@ -5,6 +5,7 @@ import com.nexus.crm.dto.ClienteRequest;
 import com.nexus.crm.model.Cliente;
 import com.nexus.crm.repository.ClienteRepository;
 import com.nexus.crm.repository.OportunidadeRepository;
+import com.nexus.crm.support.TesteAutenticado;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("Endpoints REST de clientes")
-class ClienteControllerIT {
+class ClienteControllerIT extends TesteAutenticado {
 
     @Autowired
     private MockMvc mockMvc;
@@ -55,7 +56,7 @@ class ClienteControllerIT {
     void deveCadastrarCliente() throws Exception {
         String corpo = objectMapper.writeValueAsString(request("Maria Souza", "maria@empresa.com.br"));
 
-        mockMvc.perform(post("/api/clientes").contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(autenticado(post("/api/clientes").contentType(MediaType.APPLICATION_JSON).content(corpo)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.nome").value("Maria Souza"))
@@ -70,7 +71,7 @@ class ClienteControllerIT {
     void deveRecusarEmailInvalido() throws Exception {
         String corpo = objectMapper.writeValueAsString(request("Maria Souza", "email-invalido"));
 
-        mockMvc.perform(post("/api/clientes").contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(autenticado(post("/api/clientes").contentType(MediaType.APPLICATION_JSON).content(corpo)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.campos.email").exists());
@@ -81,7 +82,7 @@ class ClienteControllerIT {
     void deveRecusarNomeVazio() throws Exception {
         String corpo = objectMapper.writeValueAsString(request("  ", "maria@empresa.com.br"));
 
-        mockMvc.perform(post("/api/clientes").contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(autenticado(post("/api/clientes").contentType(MediaType.APPLICATION_JSON).content(corpo)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.campos.nome").exists());
     }
@@ -96,7 +97,7 @@ class ClienteControllerIT {
 
         String corpo = objectMapper.writeValueAsString(request("Maria Souza", "maria@empresa.com.br"));
 
-        mockMvc.perform(post("/api/clientes").contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(autenticado(post("/api/clientes").contentType(MediaType.APPLICATION_JSON).content(corpo)))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.mensagem").value(org.hamcrest.Matchers.containsString("maria@empresa.com.br")));
     }
@@ -104,7 +105,7 @@ class ClienteControllerIT {
     @Test
     @DisplayName("Devolve 404 ao consultar cliente inexistente")
     void deveDevolver404ParaClienteInexistente() throws Exception {
-        mockMvc.perform(get("/api/clientes/999"))
+        mockMvc.perform(autenticado(get("/api/clientes/999")))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.status").value(404));
     }
@@ -115,7 +116,7 @@ class ClienteControllerIT {
         clienteRepository.save(cliente("Ana Lima", "ana@empresa.com.br"));
         clienteRepository.save(cliente("Bruno Dias", "bruno@empresa.com.br"));
 
-        mockMvc.perform(get("/api/clientes").param("termo", "bruno"))
+        mockMvc.perform(autenticado(get("/api/clientes").param("termo", "bruno")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.conteudo.length()").value(1))
                 .andExpect(jsonPath("$.conteudo[0].nome").value("Bruno Dias"))
@@ -132,9 +133,9 @@ class ClienteControllerIT {
 
         String corpo = objectMapper.writeValueAsString(request("Nome Novo", "novo@empresa.com.br"));
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+        mockMvc.perform(autenticado(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .put("/api/clientes/" + existente.getId())
-                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nome").value("Nome Novo"));
     }
@@ -147,7 +148,7 @@ class ClienteControllerIT {
         existente.setEmail("sem.oportunidades@empresa.com.br");
         clienteRepository.save(existente);
 
-        mockMvc.perform(delete("/api/clientes/" + existente.getId()))
+        mockMvc.perform(autenticado(delete("/api/clientes/" + existente.getId())))
                 .andExpect(status().isNoContent());
 
         assertThat(clienteRepository.existsById(existente.getId())).isFalse();

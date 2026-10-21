@@ -6,6 +6,7 @@ import com.nexus.crm.model.EtapaOportunidade;
 import com.nexus.crm.model.Oportunidade;
 import com.nexus.crm.repository.ClienteRepository;
 import com.nexus.crm.repository.OportunidadeRepository;
+import com.nexus.crm.support.TesteAutenticado;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -33,7 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("Endpoints REST de oportunidades")
-class OportunidadeControllerIT {
+class OportunidadeControllerIT extends TesteAutenticado {
 
     @Autowired
     private MockMvc mockMvc;
@@ -77,7 +78,7 @@ class OportunidadeControllerIT {
     void deveCadastrarOportunidade() throws Exception {
         String corpo = objectMapper.writeValueAsString(corpoOportunidade(25000.0, "NOVO_CONTATO", cliente.getId()));
 
-        mockMvc.perform(post("/api/oportunidades").contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(autenticado(post("/api/oportunidades").contentType(MediaType.APPLICATION_JSON).content(corpo)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").isNumber())
                 .andExpect(jsonPath("$.clienteId").value(cliente.getId()))
@@ -92,7 +93,7 @@ class OportunidadeControllerIT {
     void deveRecusarValorZero() throws Exception {
         String corpo = objectMapper.writeValueAsString(corpoOportunidade(0.0, "NOVO_CONTATO", cliente.getId()));
 
-        mockMvc.perform(post("/api/oportunidades").contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(autenticado(post("/api/oportunidades").contentType(MediaType.APPLICATION_JSON).content(corpo)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.campos.valorEstimado").exists());
     }
@@ -102,7 +103,7 @@ class OportunidadeControllerIT {
     void deveRecusarClienteInexistente() throws Exception {
         String corpo = objectMapper.writeValueAsString(corpoOportunidade(1000.0, "NOVO_CONTATO", 999L));
 
-        mockMvc.perform(post("/api/oportunidades").contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(autenticado(post("/api/oportunidades").contentType(MediaType.APPLICATION_JSON).content(corpo)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.mensagem").value(containsString("999")));
     }
@@ -118,9 +119,9 @@ class OportunidadeControllerIT {
         oportunidade.setProbabilidade(35);
         oportunidadeRepository.save(oportunidade);
 
-        mockMvc.perform(patch("/api/oportunidades/" + oportunidade.getId() + "/etapa")
+        mockMvc.perform(autenticado(patch("/api/oportunidades/" + oportunidade.getId() + "/etapa")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("etapa", "PROPOSTA"))))
+                        .content(objectMapper.writeValueAsString(Map.of("etapa", "PROPOSTA")))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.etapa").value("PROPOSTA"));
     }
@@ -136,9 +137,9 @@ class OportunidadeControllerIT {
         oportunidade.setProbabilidade(10);
         oportunidadeRepository.save(oportunidade);
 
-        mockMvc.perform(patch("/api/oportunidades/" + oportunidade.getId() + "/etapa")
+        mockMvc.perform(autenticado(patch("/api/oportunidades/" + oportunidade.getId() + "/etapa")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of("etapa", "GANHO"))))
+                        .content(objectMapper.writeValueAsString(Map.of("etapa", "GANHO")))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.mensagem").value(containsString("Transicao invalida")));
     }
@@ -154,12 +155,12 @@ class OportunidadeControllerIT {
         ganha.setProbabilidade(100);
         oportunidadeRepository.save(ganha);
 
-        mockMvc.perform(get("/api/oportunidades").param("etapa", "GANHO"))
+        mockMvc.perform(autenticado(get("/api/oportunidades").param("etapa", "GANHO")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElementos").value(1))
                 .andExpect(jsonPath("$.conteudo[0].etapa").value("GANHO"));
 
-        mockMvc.perform(get("/api/oportunidades").param("clienteId", String.valueOf(cliente.getId())))
+        mockMvc.perform(autenticado(get("/api/oportunidades").param("clienteId", String.valueOf(cliente.getId()))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElementos").value(1));
     }
@@ -175,7 +176,7 @@ class OportunidadeControllerIT {
         oportunidade.setProbabilidade(10);
         oportunidadeRepository.save(oportunidade);
 
-        mockMvc.perform(delete("/api/oportunidades/" + oportunidade.getId()))
+        mockMvc.perform(autenticado(delete("/api/oportunidades/" + oportunidade.getId())))
                 .andExpect(status().isNoContent());
 
         assertThat(oportunidadeRepository.count()).isZero();

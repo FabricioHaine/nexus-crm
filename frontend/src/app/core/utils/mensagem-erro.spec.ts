@@ -31,6 +31,18 @@ describe('mensagemErro', () => {
     expect(mensagemErro(erro)).toContain('Nao foi possivel conectar ao servidor');
   });
 
+  it('deve avisar quando a sessao expirou', () => {
+    const erro = new HttpErrorResponse({ status: 401 });
+
+    expect(mensagemErro(erro)).toContain('Sessao expirada');
+  });
+
+  it('deve avisar quando o perfil nao permite a operacao', () => {
+    const erro = new HttpErrorResponse({ status: 403 });
+
+    expect(mensagemErro(erro)).toContain('perfil de acesso');
+  });
+
   it('deve usar a mensagem padrao quando o erro nao tem informacao util', () => {
     expect(mensagemErro(new Error('boom'), 'Mensagem padrao')).toBe('Mensagem padrao');
   });

@@ -5,6 +5,7 @@ import com.nexus.crm.model.EtapaOportunidade;
 import com.nexus.crm.model.Oportunidade;
 import com.nexus.crm.repository.ClienteRepository;
 import com.nexus.crm.repository.OportunidadeRepository;
+import com.nexus.crm.support.TesteAutenticado;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @DisplayName("Endpoints de indicadores do dashboard")
-class DashboardControllerIT {
+class DashboardControllerIT extends TesteAutenticado {
 
     @Autowired
     private MockMvc mockMvc;
@@ -57,7 +58,7 @@ class DashboardControllerIT {
         ganho.setProbabilidade(100);
         oportunidadeRepository.save(ganho);
 
-        mockMvc.perform(get("/api/dashboard/resumo"))
+        mockMvc.perform(autenticado(get("/api/dashboard/resumo")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalClientes").value(1))
                 .andExpect(jsonPath("$.totalOportunidades").value(1))
@@ -70,7 +71,7 @@ class DashboardControllerIT {
     @Test
     @DisplayName("Devolve a distribuicao por etapa do funil")
     void deveDevolverOportunidadesPorEtapa() throws Exception {
-        mockMvc.perform(get("/api/dashboard/oportunidades-por-etapa"))
+        mockMvc.perform(autenticado(get("/api/dashboard/oportunidades-por-etapa")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(5))
                 .andExpect(jsonPath("$[0].etapa").value("NOVO_CONTATO"))
@@ -80,7 +81,7 @@ class DashboardControllerIT {
     @Test
     @DisplayName("Devolve a evolucao de vendas por periodo")
     void deveDevolverVendasPorPeriodo() throws Exception {
-        mockMvc.perform(get("/api/dashboard/vendas-por-periodo").param("meses", "6"))
+        mockMvc.perform(autenticado(get("/api/dashboard/vendas-por-periodo").param("meses", "6")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(6))
                 .andExpect(jsonPath("$[0].periodo").isString())
