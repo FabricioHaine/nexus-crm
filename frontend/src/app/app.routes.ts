@@ -12,6 +12,7 @@ import { LoginPage } from './features/auth/login-page';
 import { OportunidadeForm } from './features/oportunidades/oportunidade-form';
 import { OportunidadeLista } from './features/oportunidades/oportunidade-lista';
 import { RegistroPage } from './features/auth/registro-page';
+import { RecuperarSenhaPage } from './features/auth/recuperar-senha-page';
 import { UsuariosPage } from './features/usuarios/usuarios-page';
 import { Layout } from './layout/layout';
 
@@ -27,6 +28,18 @@ export const routes: Routes = [
     component: RegistroPage,
     canActivate: [guestGuard],
     title: 'Criar conta | Nexus CRM',
+  },
+  {
+    path: 'recuperar-senha',
+    component: RecuperarSenhaPage,
+    canActivate: [guestGuard],
+    title: 'Recuperar senha | Nexus CRM',
+  },
+  {
+    path: 'redefinir-senha',
+    component: RecuperarSenhaPage,
+    canActivate: [guestGuard],
+    title: 'Nova senha | Nexus CRM',
   },
   {
     path: '',

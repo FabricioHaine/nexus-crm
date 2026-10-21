@@ -1,0 +1,75 @@
+# =============================================================================
+# Nexus CRM - stack completa com Docker Compose
+# =============================================================================
+# Sobe a API (Spring Boot + PostgreSQL) e a interface web (Angular + nginx).
+#
+#   docker compose up --build
+#   interface: http://localhost:4200
+#   API:       http://localhost:8080/api
+#   console:   http://localhost:8080/h2-console (apenas no perfil dev)
+#
+# As credenciais de desenvolvimento ficam em .env (veja .env.example). Em
+# producao, sobrescreva APP_JWT_SECRET e APP_ADMIN_SENHA.
+
+services:
+
+  # --- Banco de dados -------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexus-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-nexus_crm}
+      POSTGRES_USER: ${DB_USERNAME:-nexus}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-nexus}
+    volumes:
+      - dados-postgres:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-nexus} -d ${DB_NAME:-nexus_crm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --- API ------------------------------------------------------------------
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: nexus-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: postgres,prod
+      DB_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-nexus_crm}
+      DB_USERNAME: ${DB_USERNAME:-nexus}
+      DB_PASSWORD: ${DB_PASSWORD:-nexus}
+      APP_JWT_SECRET: ${APP_JWT_SECRET:?defina APP_JWT_SECRET no arquivo .env}
+      APP_JWT_EXPIRACAO_MINUTOS: ${APP_JWT_EXPIRACAO_MINUTOS:-480}
+      APP_ADMIN_EMAIL: ${APP_ADMIN_EMAIL:-admin@nexuscrm.local}
+      APP_ADMIN_SENHA: ${APP_ADMIN_SENHA:?defina APP_ADMIN_SENHA no arquivo .env}
+      APP_ADMIN_NOME: ${APP_ADMIN_NOME:-Administrador}
+      APP_CORS_ORIGINS: ${APP_CORS_ORIGINS:-http://localhost:4200}
+      APP_SESSION_COOKIE_SECURE: ${APP_SESSION_COOKIE_SECURE:-false}
+      APP_SESSION_COOKIE_SAME_SITE: ${APP_SESSION_COOKIE_SAME_SITE:-Lax}
+      SERVER_PORT: 8080
+    ports:
+      - "${API_PORT:-8080}:8080"
+    restart: unless-stopped
+
+  # --- Interface web --------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: nexus-frontend
+    depends_on:
+      - api
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    restart: unless-stopped
+
+volumes:
+  dados-postgres:

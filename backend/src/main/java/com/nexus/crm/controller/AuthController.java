@@ -2,10 +2,13 @@ package com.nexus.crm.controller;
 
 import com.nexus.crm.dto.LoginRequest;
 import com.nexus.crm.dto.LoginResponse;
+import com.nexus.crm.dto.RecuperarSenhaRequest;
+import com.nexus.crm.dto.RedefinirSenhaRequest;
 import com.nexus.crm.dto.RegistroRequest;
 import com.nexus.crm.dto.TrocarSenhaRequest;
 import com.nexus.crm.dto.UsuarioResponse;
 import com.nexus.crm.service.AuthService;
+import com.nexus.crm.service.RecuperacaoSenhaService;
 import com.nexus.crm.service.SessaoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,10 +38,14 @@ public class AuthController {
 
     private final AuthService authService;
     private final SessaoService sessaoService;
+    private final RecuperacaoSenhaService recuperacaoSenhaService;
 
-    public AuthController(AuthService authService, SessaoService sessaoService) {
+    public AuthController(AuthService authService,
+                          SessaoService sessaoService,
+                          RecuperacaoSenhaService recuperacaoSenhaService) {
         this.authService = authService;
         this.sessaoService = sessaoService;
+        this.recuperacaoSenhaService = recuperacaoSenhaService;
     }
 
     @PostMapping("/login")
@@ -78,5 +85,19 @@ public class AuthController {
     @Operation(summary = "Troca a senha do usuario autenticado e revoga as outras sessoes")
     public void trocarSenha(@Valid @RequestBody TrocarSenhaRequest request, Authentication autenticacao) {
         authService.trocarSenha(autenticacao.getName(), request.senhaAtual(), request.novaSenha());
+    }
+
+    @PostMapping("/recuperar-senha")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    @Operation(summary = "Envia o link de recuperacao de senha (nao revela se o e-mail existe)")
+    public void recuperarSenha(@Valid @RequestBody RecuperarSenhaRequest request) {
+        recuperacaoSenhaService.solicitarRecuperacao(request.email());
+    }
+
+    @PostMapping("/redefinir-senha")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Redefine a senha com o token de recuperacao")
+    public void redefinirSenha(@Valid @RequestBody RedefinirSenhaRequest request) {
+        recuperacaoSenhaService.redefinirSenha(request.token(), request.novaSenha());
     }
 }

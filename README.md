@@ -33,12 +33,14 @@ front-end, autenticação **JWT** com perfis de acesso e banco relacional com **
 7. [Banco de dados](#7-banco-de-dados)
 8. [API REST](#8-api-rest)
 9. [Configuração](#9-configuração)
-10. [Testes](#10-testes)
-11. [Decisões técnicas](#11-decisões-técnicas)
-12. [Limitações conhecidas](#12-limitações-conhecidas)
-13. [Roadmap](#13-roadmap)
-14. [Contribuindo](#14-contribuindo)
-15. [Licença](#15-licença)
+10. [Execução com Docker](#10-execução-com-docker)
+11. [Integração contínua](#11-integração-contínua)
+12. [Testes](#12-testes)
+13. [Decisões técnicas](#13-decisões-técnicas)
+14. [Limitações conhecidas](#14-limitações-conhecidas)
+15. [Roadmap](#15-roadmap)
+16. [Contribuindo](#16-contribuindo)
+17. [Licença](#17-licença)
 
 ---
 
@@ -98,8 +100,13 @@ Capturas reais da aplicação em execução, geradas na pasta `docs/screenshots/
 - Cadastro público de novos usuários — o perfil inicial é sempre `VENDEDOR`
 - Três perfis de acesso: `ADMIN`, `GERENTE` e `VENDEDOR`
 - Proteção de todas as rotas da API **e** da interface (guards de rota)
+- Sessão em cookie **HttpOnly**: o token nunca é exposto ao JavaScript, fechando a porta para roubo por XSS
+- Proteção **CSRF** por dupla submissão nas operações de escrita
+- **Renovação de sessão** com token de uso único rotacionado a cada renovação
 - Encerramento de sessão e invalidação **imediata** do acesso ao desativar um usuário
 - Senhas gravadas apenas como hash **BCrypt** — nunca em texto puro
+- **Troca de senha** pelo próprio usuário, com revogação das outras sessões
+- **Recuperação de senha** por link de uso único, válido por uma hora
 - Tela de gestão de usuários para troca de perfil e ativação/desativação de contas
 
 ### Módulo de clientes
@@ -219,33 +226,54 @@ O administrador é criado na **primeira execução** (carga idempotente) a parti
 
 ### 4.1 Como funciona
 
-A API é **stateless**: cada requisição carrega um token JWT assinado no cabeçalho `Authorization`.
-Não há sessão no servidor, o que mantém a API horizontalmente escalável.
+A API é **stateless**: cada requisição carrega um token JWT assinado. Não há sessão no servidor, o
+que mantém a API horizontalmente escalável. O token pode chegar de duas formas:
+
+| Origem | Quem usa | Como viaja |
+| --- | --- | --- |
+| Cabeçalho `Authorization: Bearer` | curl, Swagger, integrações | o cliente o envia |
+| Cookie `HttpOnly` | a interface web | o navegador o envia sozinho |
+
+Na interface, a sessão **não fica no `localStorage`**: o token viaja num cookie `HttpOnly`, que o
+JavaScript da página não consegue ler.
 
 ```
         Browser                     API (Spring Security)
-   ┌────────────────┐          ┌─────────────────────────────┐
-   │  Tela de login │  POST    │  AuthController             │
-   │                │─────────▶│  /api/auth/login           │
-   │  AuthService   │◀─────────│  valida BCrypt + emite JWT  │
-   │  salva token   │  {token} │                             │
-   └────────────────┘          └─────────────────────────────┘
-          │                            ▲
-          │  GET /api/clientes          │  Authorization: Bearer <token>
-          │  + Authorization            │
-          ▼                            │
-   ┌────────────────┐          ┌─────────────────────────────┐
-   │  HttpClient    │─────────▶│  SecurityFilterChain        │
-   │  + interceptor │          │  valida assinatura (HS256)  │
-   └────────────────┘          │  recarrega o usuário do BD  │
-                                │  aplica as regras do perfil │
-                                └─────────────────────────────┘
+   ┌────────────────┐          ┌──────────────────────────────┐
+   │  Tela de login │  POST    │  AuthController              │
+   │                │─────────▶│  /api/auth/login             │
+   │  AuthService   │◀─────────│  valida BCrypt e emite o JWT │
+   │  (sem token    │  cookie  │                              │
+   │   no JS)       │  HttpOnly│  grava o cookie de sessao    │
+   └────────────────┘          │  e o de renovacao            │
+          │                     └──────────────────────────────┘
+          │  GET /api/clientes
+          │  + cookie HttpOnly (automatico)
+          │  + X-XSRF-TOKEN (copiado do cookie XSRF-TOKEN)
+          ▼
+   ┌────────────────┐          ┌──────────────────────────────┐
+   │  HttpClient    │─────────▶│  CsrfFilter                  │
+   │  + interceptor │          │  valida a dupla submissao    │
+   │  + XSRF do     │          ├──────────────────────────────┤
+   │    Angular     │          │  FiltroAutenticacaoJwt       │
+   └────────────────┘          │  valida a assinatura (HS256) │
+                                │  recarrega o usuario do BD   │
+                                │  aplica as regras do perfil  │
+                                └──────────────────────────────┘
 ```
 
 Pontos que valem destacar:
 
 - O token é assinado com **HMAC-SHA256** e carrega o e-mail no `sub`, o id em `uid` e os perfis em
   `papeis`.
+- **O cookie de sessão é `HttpOnly` e `SameSite=Strict`.** Um XSS não consegue ler a credencial, e
+  o navegador não envia o cookie em requisições vindas de outros sites.
+- **Toda escrita exige o token de CSRF.** O `HttpClient` do Angular copia o cookie `XSRF-TOKEN`
+  para o cabeçalho `X-XSRF-TOKEN`; sem ele, a API responde `403`. As requisições com cabeçalho
+  `Authorization` são dispensadas do CSRF, por não dependerem de credencial automática.
+- **A renovação é rotacionada.** O token de renovação é um valor opaco guardado apenas como hash
+  SHA-256; a cada renovação ele é invalidado e um novo é emitido. Reusar um token já trocado é
+  recusado.
 - **O usuário é recarregado do banco a cada requisição.** O `ConversorJwtAuthentication` ignora os
   perfis gravados no token: alterar o perfil ou desativar uma conta tem efeito imediato, sem esperar
   a expiração do token.
@@ -258,6 +286,8 @@ Pontos que valem destacar:
 | --- | :---: | :---: | :---: | :---: |
 | `POST /api/auth/login` | ✅ | — | — | — |
 | `POST /api/auth/registro` | ✅ | — | — | — |
+| `POST /api/auth/refresh` · `/api/auth/logout` | ✅ | — | — | — |
+| `POST /api/auth/recuperar-senha` · `/api/auth/redefinir-senha` | ✅ | — | — | — |
 | `GET /api/clientes` · `GET /api/clientes/{id}` | ❌ | ✅ | ✅ | ✅ |
 | `POST`/`PUT /api/clientes` | ❌ | ✅ | ✅ | ✅ |
 | `DELETE /api/clientes/{id}` | ❌ | ❌ | ✅ | ✅ |
@@ -287,6 +317,12 @@ Copie `.env.example` para um arquivo de ambiente (fora do repositório) e ajuste
 | `DB_URL` | — | JDBC do PostgreSQL (perfil `postgres`) |
 | `DB_USERNAME` | — | Usuário do PostgreSQL |
 | `DB_PASSWORD` | — | Senha do PostgreSQL |
+| `APP_SESSION_COOKIE_SECURE` | `false` | marca os cookies como `Secure` (ligue em produção) |
+| `APP_SESSION_COOKIE_SAME_SITE` | `Strict` | política `SameSite` dos cookies |
+| `APP_SESSION_REFRESH_DIAS` | `7` | validade do token de renovação |
+| `APP_RECUPERACAO_URL` | `http://localhost:4200` | base do link de recuperação de senha |
+| `APP_RECUPERACAO_VALIDADE_MINUTOS` | `60` | validade do token de recuperação |
+| `SPRING_MAIL_HOST` | — | SMTP para o envio dos e-mails (opcional) |
 
 ---
 
@@ -527,8 +563,13 @@ Regras aplicadas no banco:
 
 | Método | Rota | Descrição | Acesso |
 | --- | --- | --- | --- |
-| `POST` | `/api/auth/login` | Autentica e devolve o token | público |
+| `POST` | `/api/auth/login` | Autentica e abre a sessão | público |
 | `POST` | `/api/auth/registro` | Cadastra um novo usuário (`VENDEDOR`) | público |
+| `POST` | `/api/auth/refresh` | Renova a sessão e rotaciona o token | público |
+| `POST` | `/api/auth/logout` | Encerra a sessão e revoga o token | público |
+| `POST` | `/api/auth/recuperar-senha` | Envia o link de recuperação | público |
+| `POST` | `/api/auth/redefinir-senha` | Redefine a senha com o token | público |
+| `POST` | `/api/auth/trocar-senha` | Troca a senha do usuário autenticado | autenticado |
 | `GET` | `/api/auth/me` | Dados do usuário autenticado | autenticado |
 | `GET` | `/api/clientes` | Lista com paginação, ordenação e busca | autenticado |
 | `GET` | `/api/clientes/{id}` | Consulta um cliente | autenticado |
@@ -681,9 +722,57 @@ chrome --headless=new --disable-gpu --hide-scrollbars \
 
 ---
 
-## 10. Testes
+## 10. Execução com Docker
 
-### 10.1 Como executar
+O projeto traz *multi-stage builds* e um `docker-compose.yml` que sobe a stack completa: PostgreSQL,
+a API (Spring Boot) e a interface (Angular servido por nginx).
+
+```bash
+# 1. copie as variaveis e ajuste os segredos
+cp .env.example .env
+
+# 2. suba a stack
+docker compose up --build
+
+# 3. acompanhe os logs
+docker compose logs -f api
+```
+
+| Serviço | Endereço |
+| --- | --- |
+| Interface web | <http://localhost:4200> |
+| API REST | <http://localhost:8080/api> |
+| Health da API | <http://localhost:8080/actuator/health> |
+
+> O perfil `prod` é ativado no `docker-compose.yml`. Por isso a API **recusa subir** se
+> `APP_JWT_SECRET` ou `APP_ADMIN_SENHA` ainda forem os valores de desenvolvimento — o
+> `docker-compose.yml` exige que ambos estejam definidos no `.env`.
+
+| Arquivo | Papel |
+| --- | --- |
+| `backend/Dockerfile` | build do JAR e imagem mínima com JRE |
+| `frontend/Dockerfile` | build do bundle e imagem com nginx |
+| `frontend/nginx.conf` | servidor estático com fallback para o `index.html` |
+| `docker-compose.yml` | stack completa com PostgreSQL, API e interface |
+
+---
+
+## 11. Integração contínua
+
+O pipeline em `.github/workflows/ci.yml` roda a cada push na `main` e em cada pull request:
+
+| Job | O que faz |
+| --- | --- |
+| `backend` | compila, roda os testes unitários e de integração, publica o JAR |
+| `frontend` | instala as dependências, roda os testes e o build, publica o bundle |
+| `security` | `npm audit` com falha em vulnerabilidades altas |
+| `docker` | constrói as duas imagens, garantindo que o Dockerfile continua válido |
+
+---
+
+## 12. Testes
+
+### 12.1 Como executar
 
 ```bash
 # Back-end: unitários (JUnit 5 + Mockito) e integração (MockMvc + H2 em memória)
@@ -696,7 +785,7 @@ cd frontend
 npm test
 ```
 
-### 10.2 Resultados da última execução
+### 12.2 Resultados da última execução
 
 Executados localmente com JDK 24 (compilando com `--release 21`), Maven 3.9.9, Node 24.15 e
 Angular CLI 20:
@@ -704,13 +793,13 @@ Angular CLI 20:
 | Projeto | Comando | Resultado |
 | --- | --- | --- |
 | Back-end (unitários) | `./mvnw test` | **16 testes**, 0 falhas — `BUILD SUCCESS` |
-| Back-end (integração) | `./mvnw verify` | **32 testes**, 0 falhas — `BUILD SUCCESS` |
-| Front-end | `npm test` | **32 testes**, 0 falhas — 7 arquivos de teste |
-| Front-end (build) | `npm run build` | bundle de 1,53 MB (319 kB gzip), sem erros |
+| Back-end (integração) | `./mvnw verify` | **47 testes**, 0 falhas — `BUILD SUCCESS` |
+| Front-end | `npm test` | **35 testes**, 0 falhas — 7 arquivos de teste |
+| Front-end (build) | `npm run build` | bundle de 1,56 MB (322 kB gzip), sem erros |
 
-**Total: 80 verificações automatizadas, todas passando.**
+**Total: 98 verificações automatizadas, todas passando.**
 
-### 10.3 O que é coberto
+### 12.3 O que é coberto
 
 **Regras de negócio** — cadastro válido, validação de campos inválidos, e-mail duplicado, cliente
 inexistente, exclusão bloqueada com oportunidades, cadastro de oportunidade, valor inválido,
@@ -724,11 +813,20 @@ rotas protegidas e recusa de token inválido; perfil `VENDEDOR` bloqueado na exc
 `GERENTE` autorizado; gestão de usuários restrita ao `ADMIN`; e desativação de um usuário
 derrubando o acesso da sessão na hora.
 
+**Sessão, CSRF e renovação** — o login grava os cookies `HttpOnly` com o caminho correto; a
+sessão por cookie autentica a requisição; uma escrita sem o token de CSRF é recusada (HTTP 403) e
+com o token é aceita; a renovação emite um cookie novo e invalida o anterior; a troca de senha
+altera o hash, recusa senha repetida e exige a senha atual correta.
+
+**Recuperação de senha** — o pedido responde `202` mesmo para e-mail inexistente (sem enumeração de
+usuários); o token é criado para usuário ativo, é recusado quando inválido e não pode ser reutilizado;
+a redefinição troca a senha.
+
 **Front-end** — modelo de oportunidade e suas transições, extração de mensagens de erro da API
 (incluindo 401 e 403), serviço de clientes com paginação e busca, formulário de cliente,
 dashboard com indicadores reais e o novo `AuthService` (login, registro, logout e perfis).
 
-### 10.4 Estratégia
+### 12.4 Estratégia
 
 | Tipo | Escopo | Ferramenta |
 | --- | --- | --- |
@@ -742,7 +840,7 @@ filtro de segurança, o conversor do token e as regras de perfil sejam exercitad
 
 ---
 
-## 11. Decisões técnicas
+## 13. Decisões técnicas
 
 **Java 21 com registros (`record`) para DTOs.**
 DTOs imutáveis, com validação declarativa (`@NotBlank`, `@Email`, `@DecimalMin`, `@Pattern`). Menos
@@ -798,6 +896,23 @@ O `SecurityConfig` define, em um único lugar, quais rotas exigem sessão e quai
 específico. A interface apenas esconde os botões que o usuário não pode usar — mas quem decide é
 sempre a API, que responde `403` se a operação for tentada de qualquer forma.
 
+**A sessão vive num cookie HttpOnly, não no `localStorage`.**
+O token de acesso viaja num cookie `HttpOnly` e `SameSite=Strict`, invisível ao JavaScript: um
+eventual XSS nao consegue ler a credencial. O token de renovação é um valor opaco guardado apenas
+como hash SHA-256, rotacionado a cada uso — reusar um token já trocado é recusado.
+
+**O CSRF é aplicado de fato às requisições por cookie.**
+A interface envia o cookie `XSRF-TOKEN` no cabeçalho `X-XSRF-TOKEN` (dupla submissão) em toda
+operação de escrita. Para que isso fosse possível, o filtro de autenticação do projeto é próprio
+(`FiltroAutenticacaoJwt`), em vez do filtro de resource server do Spring Security: este último
+isenta automaticamente do CSRF qualquer requisição que carregue o token, o que desativaria a
+proteção justamente nas requisições autenticadas por cookie.
+
+**A aplicação se recusa a subir com segredos de desenvolvimento.**
+Fora dos perfis `dev` e `test`, a inicialização falha se a chave JWT ou a senha do administrador
+ainda forem as de desenvolvimento. Uma falha cedo e explícita é muito melhor do que um ambiente
+exposto.
+
 **Senhas nunca são gravadas em texto puro.**
 O `BCryptPasswordEncoder` calcula o hash no cadastro e o compara no login. O hash é o que vai para
 o banco; a senha em claro nunca é persistida nem devolvida pela API.
@@ -808,13 +923,12 @@ gestão de usuários. Isso evita que qualquer pessoa se auto-promova pela tela d
 
 ---
 
-## 12. Limitações conhecidas
+## 14. Limitações conhecidas
 
-- **Token no `localStorage`.** A sessão é mantida no armazenamento do navegador, o que expõe o token
-  a ataques de XSS. Para uma versão em produção, prefira um cookie `HttpOnly` com `SameSite`.
-- **Sem refresh token.** A sessão expira em 8 horas (`app.jwt.expiracao-minutos`) e o usuário precisa
-  entrar de novo. Não há renovação automática.
-- **Sem recuperação de senha.** Não existe fluxo de "esqueci minha senha" nem envio de e-mail.
+- **A renovação depende do cookie de sessão.** A política `SameSite=Strict` exige que a API e o
+  front-end fiquem no mesmo site. Em domínios diferentes, use `SameSite=None` com `Secure` (e HTTPS).
+- **O e-mail de recuperação depende de SMTP.** Sem `spring.mail.host` configurado, o link é
+  registrado no log da API em vez de ser enviado — o fluxo funciona, mas não chega ao usuário.
 - **Sem histórico de auditoria.** Os registros não guardam *quem* criou ou alterou cada cliente e
   oportunidade, apenas as datas.
 - **Sem segregação de dados por vendedor.** Todos os usuários autenticados veem a base completa de
@@ -832,10 +946,10 @@ gestão de usuários. Isso evita que qualquer pessoa se auto-promova pela tela d
 
 ---
 
-## 13. Roadmap
+## 15. Roadmap
 
-- [ ] Refresh token e cookie `HttpOnly` com `SameSite`, em vez do `localStorage`
-- [ ] Fluxo de recuperação de senha e troca de senha pelo próprio usuário
+- [ ] Cookie de sessão com `SameSite=None` para implantações em domínios diferentes
+- [ ] Envio de e-mail transacional (recuperação de senha, convites)
 - [ ] Registro de auditoria (quem criou ou alterou cada registro)
 - [ ] Segregação de dados: cada vendedor vê apenas os próprios clientes e oportunidades
 - [ ] Relatórios exportáveis (CSV) e metas por mês/seller
@@ -846,7 +960,7 @@ gestão de usuários. Isso evita que qualquer pessoa se auto-promova pela tela d
 
 ---
 
-## 14. Contribuindo
+## 16. Contribuindo
 
 1. Faça um *fork* do repositório e crie um branch a partir de `main`.
 2. Escreva o código seguindo o estilo do projeto: 4 espaços, identificadores em português para o
@@ -867,7 +981,7 @@ gestão de usuários. Isso evita que qualquer pessoa se auto-promova pela tela d
 
 ---
 
-## 15. Licença
+## 17. Licença
 
 Projeto sob a licença **MIT**. Sinta-se à vontade para estudar, reutilizar e contribuir.
 

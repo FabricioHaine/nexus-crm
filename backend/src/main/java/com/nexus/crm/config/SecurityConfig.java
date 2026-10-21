@@ -123,7 +123,8 @@ public class SecurityConfig {
                 .sessionManagement(gerenciador -> gerenciador.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(registro -> registro
                         .requestMatchers("/api/auth/login", "/api/auth/registro",
-                                "/api/auth/refresh", "/api/auth/logout").permitAll()
+                                "/api/auth/refresh", "/api/auth/logout",
+                                "/api/auth/recuperar-senha", "/api/auth/redefinir-senha").permitAll()
                         .requestMatchers("/h2-console/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
                         .permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/clientes/**", "/api/oportunidades/**")
@@ -186,7 +187,9 @@ public class SecurityConfig {
             return "/api/auth/login".equals(uri)
                     || "/api/auth/registro".equals(uri)
                     || "/api/auth/refresh".equals(uri)
-                    || "/api/auth/logout".equals(uri);
+                    || "/api/auth/logout".equals(uri)
+                    || "/api/auth/recuperar-senha".equals(uri)
+                    || "/api/auth/redefinir-senha".equals(uri);
         };
     }
 

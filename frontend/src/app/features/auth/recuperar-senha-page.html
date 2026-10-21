@@ -1,0 +1,128 @@
+<div class="nexus-auth">
+  <div class="nexus-auth__card">
+    <div class="nexus-auth__formulario">
+      <header class="nexus-auth__cabecalho">
+        <h1>{{ redefinindo ? 'Nova senha' : 'Recuperar senha' }}</h1>
+        <p class="nexus-muted">
+          {{
+            redefinindo
+              ? 'Escolha uma nova senha para a sua conta'
+              : 'Informe o e-mail cadastrado para receber o link'
+          }}
+        </p>
+      </header>
+
+      <div *ngIf="erro()" class="nexus-auth__erro">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span>{{ erro() }}</span>
+      </div>
+
+      <div *ngIf="enviado() && !redefinindo" class="nexus-auth__aviso">
+        <i class="pi pi-envelope"></i>
+        <div>
+          <strong>Verifique seu e-mail</strong>
+          <p class="nexus-muted">
+            Se houver uma conta com esse e-mail, enviaremos o link de recuperacao. Ele vale por uma
+            hora e pode ser usado uma unica vez.
+          </p>
+        </div>
+      </div>
+
+      <form
+        *ngIf="!enviado() || redefinindo"
+        [formGroup]="formulario"
+        (ngSubmit)="redefinindo ? redefinir() : enviar()"
+        class="nexus-auth__form"
+      >
+        <div class="nexus-campo" *ngIf="!redefinindo">
+          <label for="email">E-mail</label>
+          <input
+            id="email"
+            pInputText
+            type="email"
+            formControlName="email"
+            placeholder="nome@empresa.com.br"
+            autocomplete="username"
+            [class.nexus-invalido]="campoInvalido('email')"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('email')">
+            {{ mensagemDoCampo('email') }}
+          </small>
+        </div>
+
+        <ng-container *ngIf="redefinindo">
+          <div class="nexus-campo">
+            <label for="novaSenha">Nova senha</label>
+            <p-password
+              inputId="novaSenha"
+              formControlName="novaSenha"
+              placeholder="Minimo de 8 caracteres"
+              [feedback]="false"
+              [toggleMask]="true"
+              autocomplete="new-password"
+              styleClass="nexus-senha"
+              [class.nexus-invalido]="campoInvalido('novaSenha')"
+            />
+            <small class="nexus-erro-campo" *ngIf="campoInvalido('novaSenha')">
+              {{ mensagemDoCampo('novaSenha') }}
+            </small>
+          </div>
+
+          <div class="nexus-campo">
+            <label for="confirmacao">Confirmar nova senha</label>
+            <p-password
+              inputId="confirmacao"
+              formControlName="confirmacao"
+              placeholder="Repita a nova senha"
+              [feedback]="false"
+              [toggleMask]="true"
+              autocomplete="new-password"
+              styleClass="nexus-senha"
+              [class.nexus-invalido]="campoInvalido('confirmacao')"
+            />
+            <small class="nexus-erro-campo" *ngIf="campoInvalido('confirmacao')">
+              {{ mensagemDoCampo('confirmacao') }}
+            </small>
+          </div>
+        </ng-container>
+
+        <p-button
+          type="submit"
+          [label]="redefinindo ? 'Salvar nova senha' : 'Enviar link de recuperacao'"
+          [icon]="redefinindo ? 'pi pi-check' : 'pi pi-envelope'"
+          [loading]="enviando()"
+          styleClass="nexus-botao-largo"
+        />
+      </form>
+
+      <footer class="nexus-auth__rodape">
+        <p class="nexus-muted">
+          <a routerLink="/login">Voltar para o login</a>
+        </p>
+      </footer>
+    </div>
+  </div>
+
+  <aside class="nexus-auth__painel">
+    <div class="nexus-auth__marca">
+      <div class="nexus-auth__logo">
+        <i class="pi pi-chart-line"></i>
+      </div>
+      <div class="nexus-auth__marca__texto">
+        <strong>Nexus CRM</strong>
+        <span>Gestao comercial</span>
+      </div>
+    </div>
+
+    <h2>Seu acesso protegido</h2>
+    <p>
+      Sua senha e guardada apenas como hash criptografico. Se voce esquecer a senha, redefina-a pelo
+      link que enviamos para o seu e-mail.
+    </p>
+    <ul>
+      <li><i class="pi pi-check-circle"></i> Link valido por uma hora</li>
+      <li><i class="pi pi-check-circle"></i> Uso unico: o token e invalidado depois</li>
+      <li><i class="pi pi-check-circle"></i> As outras sessoes sao encerradas</li>
+    </ul>
+  </aside>
+</div>

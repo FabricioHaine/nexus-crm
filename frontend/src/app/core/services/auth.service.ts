@@ -122,6 +122,16 @@ export class AuthService {
     return this.http.post<void>(`${this.baseUrl}/trocar-senha`, { senhaAtual, novaSenha });
   }
 
+  /** Solicita o envio do link de recuperacao de senha. */
+  recuperarSenha(email: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/recuperar-senha`, { email });
+  }
+
+  /** Redefine a senha com o token recebido por e-mail. */
+  redefinirSenha(token: string, novaSenha: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/redefinir-senha`, { token, novaSenha });
+  }
+
   private registrarSessao(usuario: Usuario): void {
     this.usuarioAtual.set(usuario);
     this.sessaoConsultada.set(true);

@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  JAVA_VERSION: '21'
+  NODE_VERSION: '24'
+
+jobs:
+
+  # --- Back-end: compila e roda a suite completa ------------------------------
+  backend:
+    name: Back-end (Java ${{ env.JAVA_VERSION }})
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instala o JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+          cache: maven
+
+      - name: Compila sem testes
+        run: ./mvnw -B -q clean package -DskipTests
+
+      - name: Testes unitarios
+        run: ./mvnw -B test
+
+      - name: Testes de integracao
+        run: ./mvnw -B verify
+
+      - name: Publica o artefato da API
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-api-jar
+          path: backend/target/nexus-crm-backend-*.jar
+          if-no-files-found: error
+          retention-days: 7
+
+  # --- Front-end: instala, testa e compila ------------------------------------
+  frontend:
+    name: Front-end (Node ${{ env.NODE_VERSION }})
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instala o Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instala as dependencias
+        run: npm ci --no-audit --no-fund
+
+      - name: Testes unitarios
+        run: npm test
+
+      - name: Build de producao
+        run: npm run build
+
+      - name: Publica o bundle da interface
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexus-frontend-bundle
+          path: frontend/dist/frontend/browser
+          if-no-files-found: error
+          retention-days: 7
+
+  # --- Seguranca das dependencias ---------------------------------------------
+  security:
+    name: Auditoria de dependencias
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instala o Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Auditoria do npm
+        working-directory: frontend
+        run: npm audit --audit-level=high
+
+  # --- Imagens Docker ---------------------------------------------------------
+  docker:
+    name: Imagens Docker
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Constroi a imagem da API
+        run: docker build -t nexus-crm-api:ci ./backend
+
+      - name: Constroi a imagem da interface
+        run: docker build -t nexus-crm-frontend:ci ./frontend
