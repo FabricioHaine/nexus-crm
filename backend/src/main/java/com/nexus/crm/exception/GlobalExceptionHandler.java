@@ -33,6 +33,14 @@ public class GlobalExceptionHandler {
                         ex.getMessage(), request.getRequestURI()));
     }
 
+    @ExceptionHandler(AutenticacaoFalhouException.class)
+    public ResponseEntity<ErrorResponse> tratarAutenticacao(AutenticacaoFalhouException ex,
+                                                           HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorResponse.de(HttpStatus.UNAUTHORIZED.value(), "Falha de autenticacao",
+                        ex.getMessage(), request.getRequestURI()));
+    }
+
     @ExceptionHandler(ConflitoDeRegraException.class)
     public ResponseEntity<ErrorResponse> tratarConflito(ConflitoDeRegraException ex,
                                                         HttpServletRequest request) {

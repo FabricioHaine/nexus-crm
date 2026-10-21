@@ -3,12 +3,16 @@ package com.nexus.crm.config;
 import com.nexus.crm.model.Cliente;
 import com.nexus.crm.model.EtapaOportunidade;
 import com.nexus.crm.model.Oportunidade;
+import com.nexus.crm.model.Papel;
+import com.nexus.crm.model.Usuario;
 import com.nexus.crm.repository.ClienteRepository;
 import com.nexus.crm.repository.OportunidadeRepository;
+import com.nexus.crm.repository.UsuarioRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
@@ -32,14 +36,23 @@ public class CargaDemonstracao implements CommandLineRunner {
 
     private final ClienteRepository clienteRepository;
     private final OportunidadeRepository oportunidadeRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public CargaDemonstracao(ClienteRepository clienteRepository, OportunidadeRepository oportunidadeRepository) {
+    public CargaDemonstracao(ClienteRepository clienteRepository,
+                              OportunidadeRepository oportunidadeRepository,
+                              UsuarioRepository usuarioRepository,
+                              PasswordEncoder passwordEncoder) {
         this.clienteRepository = clienteRepository;
         this.oportunidadeRepository = oportunidadeRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) {
+        carregarUsuarios();
+
         if (clienteRepository.count() > 0) {
             log.info("Carga de demonstracao ignorada: ja existem clientes cadastrados.");
             return;
@@ -87,6 +100,29 @@ public class CargaDemonstracao implements CommandLineRunner {
 
         log.info("Carga de demonstracao concluida: {} clientes e {} oportunidades.",
                 clientes.size(), oportunidades.size());
+    }
+
+    /**
+     * Cria os usuarios de demonstracao, um para cada perfil de acesso, para que
+     * as regras de permissao possam ser exercitadas na interface.
+     */
+    private void carregarUsuarios() {
+        criarUsuarioSeAusente("Gerente Comercial", "gerente@nexuscrm.local", "Vendas@2026", Papel.GERENTE);
+        criarUsuarioSeAusente("Vendedor", "vendedor@nexuscrm.local", "Vendas@2026", Papel.VENDEDOR);
+    }
+
+    private void criarUsuarioSeAusente(String nome, String email, String senha, Papel papel) {
+        if (usuarioRepository.existsByEmailIgnoreCase(email)) {
+            return;
+        }
+        Usuario usuario = new Usuario();
+        usuario.setNome(nome);
+        usuario.setEmail(email);
+        usuario.setSenhaHash(passwordEncoder.encode(senha));
+        usuario.setPapel(papel);
+        usuario.setAtivo(true);
+        usuarioRepository.save(usuario);
+        log.info("Usuario de demonstracao criado: {} ({})", email, papel);
     }
 
     private Cliente cliente(String nome, String email, String telefone, String empresa, String cargo,
