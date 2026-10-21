@@ -12,7 +12,7 @@
 
     <nav class="nexus-menu" aria-label="Navegacao principal">
       <a
-        *ngFor="let item of itensMenu"
+        *ngFor="let item of itensMenu()"
         class="nexus-menu__item"
         [routerLink]="item.rota"
         routerLinkActive="nexus-menu__item--ativo"
@@ -66,6 +66,27 @@
           icon="pi pi-plus"
           size="small"
         ></a>
+
+        <div class="nexus-usuario" *ngIf="usuario() as sessao">
+          <span class="nexus-usuario__avatar" [pTooltip]="perfilAtual()" tooltipPosition="bottom">
+            {{ iniciais() }}
+          </span>
+          <div class="nexus-usuario__dados">
+            <strong>{{ sessao.nome }}</strong>
+            <span>{{ perfilAtual() }}</span>
+          </div>
+          <button
+            pButton
+            type="button"
+            icon="pi pi-sign-out"
+            severity="secondary"
+            [text]="true"
+            pTooltip="Sair"
+            tooltipPosition="bottom"
+            aria-label="Sair da conta"
+            (click)="sair()"
+          ></button>
+        </div>
       </div>
     </header>
 

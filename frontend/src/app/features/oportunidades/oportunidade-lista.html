@@ -181,6 +181,7 @@
                 [routerLink]="['/oportunidades', oportunidade.id, 'editar']"
               ></a>
               <button
+                *ngIf="podeExcluir()"
                 pButton
                 type="button"
                 icon="pi pi-trash"

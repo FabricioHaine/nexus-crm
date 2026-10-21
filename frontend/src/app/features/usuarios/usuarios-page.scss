@@ -1,0 +1,125 @@
+.nexus-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+
+  p {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+  }
+}
+
+.nexus-toolbar__acoes {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nexus-tabela-container {
+  overflow: hidden;
+}
+
+.nexus-coluna-acoes {
+  width: 96px;
+  text-align: right;
+}
+
+.nexus-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.nexus-vazio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 36px 16px;
+  text-align: center;
+
+  i {
+    font-size: 30px;
+    color: var(--nexus-border-strong);
+  }
+
+  strong {
+    font-size: 14px;
+  }
+
+  p {
+    max-width: 420px;
+    margin: 0 0 6px;
+    font-size: 13px;
+  }
+}
+
+.nexus-estado-erro {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+
+  i {
+    font-size: 22px;
+    color: var(--nexus-danger);
+  }
+
+  strong {
+    display: block;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 13px;
+  }
+}
+
+/* --- Identificacao do usuario na tabela -------------------------------------- */
+.nexus-cliente {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nexus-cliente__avatar {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nexus-primary);
+  background: var(--nexus-primary-soft);
+  border-radius: 50%;
+}
+
+.nexus-cliente__dados {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+
+  strong {
+    font-size: 13.5px;
+    font-weight: 600;
+  }
+
+  span {
+    font-size: 12px;
+    color: var(--nexus-text-muted);
+  }
+}
+
+:host ::ng-deep .nexus-select-perfil {
+  min-width: 170px;
+}
+
+@media (max-width: 768px) {
+  .nexus-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

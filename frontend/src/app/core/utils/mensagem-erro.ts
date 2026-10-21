@@ -18,6 +18,12 @@ export function mensagemErro(erro: unknown, padrao = 'Nao foi possivel completar
     if (erro.status === 0) {
       return 'Nao foi possivel conectar ao servidor. Verifique se a API esta em execucao.';
     }
+    if (erro.status === 401) {
+      return 'Sessao expirada ou credenciais invalidas. Entre novamente.';
+    }
+    if (erro.status === 403) {
+      return 'Seu perfil de acesso nao permite executar esta operacao.';
+    }
   }
   return padrao;
 }

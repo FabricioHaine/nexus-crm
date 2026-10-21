@@ -1,0 +1,88 @@
+<div class="nexus-auth">
+  <div class="nexus-auth__card">
+    <div class="nexus-auth__formulario">
+      <header class="nexus-auth__cabecalho">
+        <h1>Entrar</h1>
+        <p class="nexus-muted">Acesse sua conta para continuar</p>
+      </header>
+
+      <div *ngIf="erro()" class="nexus-auth__erro">
+        <i class="pi pi-exclamation-triangle"></i>
+        <span>{{ erro() }}</span>
+      </div>
+
+      <form [formGroup]="formulario" (ngSubmit)="entrar()" class="nexus-auth__form">
+        <div class="nexus-campo">
+          <label for="email">E-mail</label>
+          <input
+            id="email"
+            pInputText
+            type="email"
+            formControlName="email"
+            placeholder="nome@empresa.com.br"
+            autocomplete="username"
+            [class.nexus-invalido]="campoInvalido('email')"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('email')">
+            {{ mensagemDoCampo('email') }}
+          </small>
+        </div>
+
+        <div class="nexus-campo">
+          <label for="senha">Senha</label>
+          <p-password
+            inputId="senha"
+            formControlName="senha"
+            placeholder="Sua senha"
+            [feedback]="false"
+            [toggleMask]="true"
+            autocomplete="current-password"
+            styleClass="nexus-senha"
+            [class.nexus-invalido]="campoInvalido('senha')"
+          />
+          <small class="nexus-erro-campo" *ngIf="campoInvalido('senha')">
+            {{ mensagemDoCampo('senha') }}
+          </small>
+        </div>
+
+        <p-button
+          type="submit"
+          label="Entrar"
+          icon="pi pi-sign-in"
+          [loading]="enviando()"
+          styleClass="nexus-botao-largo"
+        />
+      </form>
+
+      <footer class="nexus-auth__rodape">
+        <p class="nexus-muted">
+          Ainda nao tem conta?
+          <a routerLink="/registro">Criar conta</a>
+        </p>
+      </footer>
+    </div>
+  </div>
+
+  <aside class="nexus-auth__painel">
+    <div class="nexus-auth__marca">
+      <div class="nexus-auth__logo">
+        <i class="pi pi-chart-line"></i>
+      </div>
+      <div class="nexus-auth__marca__texto">
+        <strong>Nexus CRM</strong>
+        <span>Gestao comercial</span>
+      </div>
+    </div>
+
+    <h2>Gestao comercial sem planilhas</h2>
+    <p>
+      Centralize o cadastro de clientes, acompanhe o funil de vendas e acompanhe os indicadores
+      comerciais em um unico lugar.
+    </p>
+    <ul>
+      <li><i class="pi pi-check-circle"></i> Clientes e oportunidades centralizados</li>
+      <li><i class="pi pi-check-circle"></i> Funil com etapas validadas</li>
+      <li><i class="pi pi-check-circle"></i> Indicadores calculados em tempo real</li>
+    </ul>
+  </aside>
+</div>

@@ -152,6 +152,43 @@
   gap: 10px;
 }
 
+/* --- Usuario autenticado ---------------------------------------------------- */
+.nexus-usuario {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 12px;
+  border-left: 1px solid var(--nexus-border);
+}
+
+.nexus-usuario__avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--nexus-navy-700);
+  border-radius: 50%;
+}
+
+.nexus-usuario__dados {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+
+  strong {
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  span {
+    font-size: 11px;
+    color: var(--nexus-text-muted);
+  }
+}
+
 .nexus-main {
   flex: 1;
   padding: 24px;
@@ -172,6 +209,12 @@
 @media (max-width: 1024px) {
   .nexus-hide-desktop {
     display: inline-flex;
+  }
+}
+
+@media (max-width: 720px) {
+  .nexus-usuario__dados {
+    display: none;
   }
 }
 

@@ -1,19 +1,36 @@
 import { Routes } from '@angular/router';
 
+import { authGuard, guestGuard } from './core/guards/auth.guard';
 import { ClienteDetalhes } from './features/clientes/cliente-detalhes';
 import { ClienteForm } from './features/clientes/cliente-form';
 import { ClienteLista } from './features/clientes/cliente-lista';
 import { DashboardPage } from './features/dashboard/dashboard-page';
 import { ErroPage } from './features/erro/erro-page';
 import { FunilPage } from './features/funil/funil-page';
+import { LoginPage } from './features/auth/login-page';
 import { OportunidadeForm } from './features/oportunidades/oportunidade-form';
 import { OportunidadeLista } from './features/oportunidades/oportunidade-lista';
+import { RegistroPage } from './features/auth/registro-page';
+import { UsuariosPage } from './features/usuarios/usuarios-page';
 import { Layout } from './layout/layout';
 
 export const routes: Routes = [
   {
+    path: 'login',
+    component: LoginPage,
+    canActivate: [guestGuard],
+    title: 'Entrar | Nexus CRM',
+  },
+  {
+    path: 'registro',
+    component: RegistroPage,
+    canActivate: [guestGuard],
+    title: 'Criar conta | Nexus CRM',
+  },
+  {
     path: '',
     component: Layout,
+    canActivate: [authGuard],
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
       {
@@ -69,6 +86,17 @@ export const routes: Routes = [
         component: FunilPage,
         title: 'Funil comercial | Nexus CRM',
         data: { titulo: 'Funil comercial', subtitulo: 'Distribuicao das negociacoes por etapa' },
+      },
+      {
+        path: 'usuarios',
+        component: UsuariosPage,
+        canActivate: [authGuard],
+        title: 'Usuarios | Nexus CRM',
+        data: {
+          titulo: 'Usuarios',
+          subtitulo: 'Gestao de usuarios e perfis de acesso',
+          papeis: ['ADMIN'],
+        },
       },
       {
         path: 'erro',

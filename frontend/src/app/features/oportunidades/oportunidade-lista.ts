@@ -21,6 +21,7 @@ import {
   proximasEtapas,
 } from '../../core/models/oportunidade.model';
 import { ClienteService } from '../../core/services/cliente.service';
+import { AuthService } from '../../core/services/auth.service';
 import { OportunidadeService } from '../../core/services/oportunidade.service';
 import { mensagemErro } from '../../core/utils/mensagem-erro';
 
@@ -54,8 +55,12 @@ interface EventoOrdenacao {
 export class OportunidadeLista {
   private readonly oportunidadeService = inject(OportunidadeService);
   private readonly clienteService = inject(ClienteService);
+  private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
+
+  /** Apenas ADMIN e GERENTE podem excluir registros. */
+  readonly podeExcluir = this.authService.podeExcluir;
 
   readonly etapas = ETAPAS;
   readonly oportunidades = signal<Oportunidade[]>([]);

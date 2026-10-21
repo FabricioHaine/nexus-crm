@@ -1,0 +1,109 @@
+<section class="nexus-page">
+  <div class="nexus-surface nexus-toolbar">
+    <div>
+      <h2 class="nexus-section-title">Usuarios e perfis de acesso</h2>
+      <p class="nexus-muted">
+        O perfildefine o que cada usuario pode fazer no sistema. Usuarios desativados perdem o
+        acesso imediatamente.
+      </p>
+    </div>
+    <div class="nexus-toolbar__acoes">
+      <p-button
+        label="Atualizar"
+        icon="pi pi-refresh"
+        severity="secondary"
+        [outlined]="true"
+        size="small"
+        (onClick)="carregar()"
+      />
+    </div>
+  </div>
+
+  <div *ngIf="erro()" class="nexus-surface nexus-estado-erro">
+    <i class="pi pi-exclamation-triangle"></i>
+    <div>
+      <strong>Nao foi possivel carregar os usuarios</strong>
+      <p class="nexus-muted">{{ erro() }}</p>
+    </div>
+    <p-button label="Tentar novamente" icon="pi pi-refresh" (onClick)="carregar()" />
+  </div>
+
+  <div class="nexus-surface nexus-tabela-container">
+    <p-table
+      [value]="usuarios()"
+      [loading]="carregando()"
+      [scrollable]="true"
+      dataKey="id"
+    >
+      <ng-template #header>
+        <tr>
+          <th>Usuario</th>
+          <th>Perfil de acesso</th>
+          <th>Situacao</th>
+          <th>Cadastro</th>
+          <th class="nexus-coluna-acoes">Acoes</th>
+        </tr>
+      </ng-template>
+
+      <ng-template #body let-usuario>
+        <tr>
+          <td>
+            <div class="nexus-cliente">
+              <span class="nexus-cliente__avatar">{{ usuario.nome.charAt(0).toUpperCase() }}</span>
+              <div class="nexus-cliente__dados">
+                <strong>{{ usuario.nome }}</strong>
+                <span>{{ usuario.email }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <p-select
+              [options]="opcoesPapel"
+              [ngModel]="usuario.papel"
+              (ngModelChange)="alterarPapel(usuario, $event)"
+              [disabled]="ehUsuarioLogado(usuario)"
+              [pTooltip]="ehUsuarioLogado(usuario) ? 'Voce nao pode alterar o proprio perfil.' : ''"
+              tooltipPosition="top"
+              styleClass="nexus-select-perfil"
+            />
+          </td>
+          <td>
+            <p-tag
+              [value]="usuario.ativo ? 'Ativo' : 'Desativado'"
+              [severity]="usuario.ativo ? 'success' : 'secondary'"
+              [rounded]="true"
+            />
+          </td>
+          <td>{{ usuario.dataCriacao | date: 'dd/MM/yyyy' }}</td>
+          <td class="nexus-coluna-acoes">
+            <div class="nexus-acoes">
+              <button
+                pButton
+                type="button"
+                [icon]="usuario.ativo ? 'pi pi-user-minus' : 'pi pi-user-plus'"
+                [severity]="usuario.ativo ? 'danger' : 'success'"
+                [text]="true"
+                [pTooltip]="usuario.ativo ? 'Desativar acesso' : 'Reativar acesso'"
+                tooltipPosition="top"
+                [attr.aria-label]="usuario.ativo ? 'Desativar acesso' : 'Reativar acesso'"
+                (click)="confirmarDesativacao(usuario)"
+              ></button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="5">
+            <div class="nexus-vazio">
+              <i class="pi pi-users"></i>
+              <strong>Nenhum usuario cadastrado</strong>
+              <p class="nexus-muted">Os usuarios aparecem aqui apos o primeiro cadastro.</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</section>

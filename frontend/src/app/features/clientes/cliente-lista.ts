@@ -13,6 +13,7 @@ import { Tag } from 'primeng/tag';
 import { Tooltip } from 'primeng/tooltip';
 
 import { Cliente, Pagina } from '../../core/models/cliente.model';
+import { AuthService } from '../../core/services/auth.service';
 import { ClienteService } from '../../core/services/cliente.service';
 import { mensagemErro } from '../../core/utils/mensagem-erro';
 
@@ -43,9 +44,13 @@ interface EventoOrdenacao {
 })
 export class ClienteLista {
   private readonly clienteService = inject(ClienteService);
+  private readonly authService = inject(AuthService);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly router = inject(Router);
+
+  /** Apenas ADMIN e GERENTE podem excluir registros. */
+  readonly podeExcluir = this.authService.podeExcluir;
 
   readonly clientes = signal<Cliente[]>([]);
   readonly totalRegistros = signal(0);
