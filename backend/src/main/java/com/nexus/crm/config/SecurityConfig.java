@@ -127,6 +127,8 @@ public class SecurityConfig {
                                 "/api/auth/recuperar-senha", "/api/auth/redefinir-senha").permitAll()
                         .requestMatchers("/h2-console/**", "/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**")
                         .permitAll()
+                        // O health e consultado pelo Docker e pelo orquestrador.
+                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(HttpMethod.DELETE, "/api/clientes/**", "/api/oportunidades/**")
                         .hasAnyRole("ADMIN", "GERENTE")
                         .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
