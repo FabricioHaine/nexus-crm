@@ -20,7 +20,11 @@ movimentação entre etapas do funil e leitura de indicadores comerciais calcula
 realmente persistidos no banco.
 
 > Todo o dado exibido na interface vem da API Java. Não há números fixos, listas simuladas nem
-> persistência em `localStorage`: o front-end é apenas uma camada de apresentação sobre a API REST.
+> persistência de dados em `localStorage`: o front-end é apenas uma camada de apresentação sobre a
+> API REST. O que fica no navegador é apenas o **token de acesso** da sessão.
+
+O acesso é protegido por autenticação (Spring Security + JWT) e por perfis de acesso
+(`ADMIN`, `GERENTE` e `VENDEDOR`), com as rotas da API e da interface protegidas.
 
 ## 2. Problema que o sistema resolve
 
@@ -34,6 +38,13 @@ recorrentes:
 | Decisões sem base: "quantas vendas fechamos no mês?" | Dashboard com indicadores calculados por agregações no banco |
 
 ## 3. Funcionalidades
+
+**Autenticação e acesso**
+- Login com e-mail e senha, emissor de token JWT assinado
+- Cadastro público de novos usuários (perfil inicial: `VENDEDOR`)
+- Perfis de acesso: `ADMIN`, `GERENTE` e `VENDEDOR`
+- Proteção de todas as rotas da API e da interface
+- Encerramento de sessão e invalidação imediata do acesso ao desativar um usuário
 
 **Módulo de clientes**
 - Cadastro, edição, consulta e exclusão de clientes
@@ -73,6 +84,8 @@ recorrentes:
 | Spring Web | 3.5 | API REST |
 | Spring Data JPA | 3.5 | persistência e repositórios |
 | Spring Validation | 3.5 | validação de entrada |
+| Spring Security | 6.5 | autenticação, autorização e token JWT |
+| Spring Security OAuth2 Resource Server | 6.5 | validação do token JWT (HMAC-SHA256) |
 | Springdoc OpenAPI | 2.8 | documentação Swagger |
 | Flyway | 11 | versionamento do esquema |
 | H2 | 2.x | banco padrão de desenvolvimento |
@@ -128,13 +141,14 @@ Navegador
 
 ```
 backend/src/main/java/com/nexus/crm/
-├── config/        CORS, OpenAPI e carga opcional de demonstração
-├── controller/    Endpoints REST (clientes, oportunidades, dashboard)
+├── config/        CORS, OpenAPI, segurança e cargas iniciais
+├── controller/    Endpoints REST (clientes, oportunidades, dashboard, autenticação)
 ├── service/       Regras de negócio e cálculo de indicadores
 ├── repository/    Consultas ao banco (Spring Data JPA)
-├── model/         Entidades JPA e enumeração de etapas
+├── model/         Entidades JPA, enumeração de etapas e perfis de acesso
 ├── dto/           Records de entrada e saída da API
 ├── mapper/        Conversão entre DTO e entidade
+├── security/      Emissão e conversão do token JWT, usuário autenticado
 ├── exception/     Exceções de domínio e tratamento global de erros
 └── NexusCrmApplication.java
 ```
@@ -145,15 +159,19 @@ backend/src/main/java/com/nexus/crm/
 frontend/src/app/
 ├── core/
 │   ├── models/       Interfaces TypeScript dos dados da API
-│   ├── services/     ClienteService, OportunidadeService, DashboardService
+│   ├── services/     ClienteService, OportunidadeService, DashboardService, AuthService
+│   ├── guards/       Proteção de rotas por sessão e por perfil de acesso
+│   ├── interceptors/ Envio do token de acesso no cabeçalho Authorization
 │   ├── theme/        Preset de tema do PrimeNG
 │   └── utils/        Extração de mensagens de erro da API
 ├── layout/           Menu lateral + cabeçalho (shell da aplicação)
 ├── features/
+│   ├── auth/         Telas de login e cadastro
 │   ├── dashboard/
 │   ├── clientes/
 │   ├── oportunidades/
 │   ├── funil/
+│   ├── usuarios/     Gestão de usuários (restrito ao ADMIN)
 │   └── erro/
 ├── environments/    URL da API por ambiente
 └── app.routes.ts    Rotas da aplicação
@@ -206,7 +224,21 @@ cd backend
 
 A API sobe em <http://localhost:8080> e o H2 cria o esquema automaticamente na primeira execução.
 
-**Com dados de demonstração** (perfil `demo` — cria 6 clientes e 10 oportunidades de exemplo):
+**Usuários iniciais** — criados na primeira execução (a carga é idempotente):
+
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| `ADMIN` | `admin@nexuscrm.local` | `Nexus@2026` |
+| `GERENTE` | `gerente@nexuscrm.local` | `Vendas@2026` |
+| `VENDEDOR` | `vendedor@nexuscrm.local` | `Vendas@2026` |
+
+> O administrador vem das propriedades `app.auth.admin.*` (variáveis `APP_ADMIN_EMAIL`,
+> `APP_ADMIN_SENHA` e `APP_ADMIN_NOME`). Os usuários `GERENTE` e `VENDEDOR` só existem com o
+> perfil `demo`. **Troque a senha do administrador antes de usar fora do ambiente local.**
+> A chave que assina o token JWT é `app.jwt.secret` (variável `APP_JWT_SECRET`).
+
+**Com dados de demonstração** (perfil `demo` — cria 6 clientes, 10 oportunidades e os usuários
+de exemplo):
 
 ```bash
 ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,demo
@@ -296,17 +328,48 @@ As migrations são aplicadas automaticamente pelo Flyway. O esquema **nunca** é
 
 ## 12. Exemplos de requisições
 
+### Autenticação
+
+```bash
+# Login (devolve o token de acesso)
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@nexuscrm.local","senha":"Nexus@2026"}'
+
+# Cadastro de um novo usuario (perfil inicial: VENDEDOR)
+curl -X POST http://localhost:8080/api/auth/registro \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Ana Ribeiro","email":"ana.ribeiro@empresa.com.br","senha":"Senha@123"}'
+
+# Dados do usuario autenticado
+curl http://localhost:8080/api/auth/me \
+  -H "Authorization: Bearer <token>"
+
+# Gestao de usuarios (restrito ao perfil ADMIN)
+curl http://localhost:8080/api/usuarios \
+  -H "Authorization: Bearer <token-do-admin>"
+```
+
+> A partir do login, **todas** as requisições precisam do cabeçalho
+> `Authorization: Bearer <token>`. Sem ele, a API responde `401`.
+
 ### Clientes
+
+> Nos exemplos a seguir, `TOKEN` é o valor devolvido pelo login:
+> `TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login -H "Content-Type: application/json" \
+> -d '{"email":"admin@nexuscrm.local","senha":"Nexus@2026"}' | jq -r .token)`
 
 ```bash
 # Listar (paginado, com busca)
-curl "http://localhost:8080/api/clientes?termo=ana&page=0&size=10&sort=nome,asc"
+curl "http://localhost:8080/api/clientes?termo=ana&page=0&size=10&sort=nome,asc" \
+  -H "Authorization: Bearer $TOKEN"
 
 # Consultar
-curl http://localhost:8080/api/clientes/1
+curl http://localhost:8080/api/clientes/1 -H "Authorization: Bearer $TOKEN"
 
 # Cadastrar
 curl -X POST http://localhost:8080/api/clientes \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
         "nome": "Ana Ribeiro",
@@ -319,21 +382,24 @@ curl -X POST http://localhost:8080/api/clientes \
 
 # Atualizar
 curl -X PUT http://localhost:8080/api/clientes/1 \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"nome":"Ana Ribeiro","email":"ana.ribeiro@empresa.com.br","empresa":"Orbitatelecom"}'
 
-# Excluir (204; 409 se houver oportunidades vinculadas)
-curl -i -X DELETE http://localhost:8080/api/clientes/1
+# Excluir (204; 409 se houver oportunidades vinculadas; 403 para o perfil VENDEDOR)
+curl -i -X DELETE http://localhost:8080/api/clientes/1 -H "Authorization: Bearer $TOKEN"
 ```
 
 ### Oportunidades
 
 ```bash
 # Listar com filtros
-curl "http://localhost:8080/api/oportunidades?clienteId=1&etapa=PROPOSTA&dataInicial=2026-01-01&dataFinal=2026-12-31"
+curl "http://localhost:8080/api/oportunidades?clienteId=1&etapa=PROPOSTA&dataInicial=2026-01-01&dataFinal=2026-12-31" \
+  -H "Authorization: Bearer $TOKEN"
 
 # Cadastrar
 curl -X POST http://localhost:8080/api/oportunidades \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
         "titulo": "Renovacao do contrato de licencas",
@@ -347,11 +413,13 @@ curl -X POST http://localhost:8080/api/oportunidades \
 
 # Avançar a etapa (409 em transições inválidas)
 curl -X PATCH http://localhost:8080/api/oportunidades/1/etapa \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"etapa":"QUALIFICACAO"}'
 
 # Marcar como perdida (motivo obrigatório)
 curl -X PATCH http://localhost:8080/api/oportunidades/1/etapa \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"etapa":"PERDIDO","motivoPerda":"Escolheu a concorrencia"}'
 ```
@@ -359,9 +427,9 @@ curl -X PATCH http://localhost:8080/api/oportunidades/1/etapa \
 ### Dashboard
 
 ```bash
-curl http://localhost:8080/api/dashboard/resumo
-curl http://localhost:8080/api/dashboard/oportunidades-por-etapa
-curl "http://localhost:8080/api/dashboard/vendas-por-periodo?meses=6"
+curl http://localhost:8080/api/dashboard/resumo -H "Authorization: Bearer $TOKEN"
+curl http://localhost:8080/api/dashboard/oportunidades-por-etapa -H "Authorization: Bearer $TOKEN"
+curl "http://localhost:8080/api/dashboard/vendas-por-periodo?meses=6" -H "Authorization: Bearer $TOKEN"
 ```
 
 ### Formato das respostas de erro
@@ -381,6 +449,8 @@ curl "http://localhost:8080/api/dashboard/vendas-por-periodo?meses=6"
 | --- | --- |
 | 200 / 201 / 204 | sucesso |
 | 400 | payload inválido (campos detalhados em `campos`) |
+| 401 | sem token, token inválido ou expirado, credenciais inválidas |
+| 403 | usuário autenticado sem o perfil exigido para a operação |
 | 404 | recurso inexistente |
 | 409 | e-mail duplicado, cliente com oportunidades, transição inválida |
 
@@ -409,15 +479,21 @@ Angular CLI 20:
 | Projeto | Comando | Resultado |
 | --- | --- | --- |
 | Back-end (unitários) | `./mvnw test` | **16 testes**, 0 falhas — `BUILD SUCCESS` |
-| Back-end (integração) | `./mvnw verify` | **18 testes**, 0 falhas — `BUILD SUCCESS` |
-| Front-end | `npm test` | **25 testes**, 0 falhas — 6 arquivos de teste |
-| Front-end (build) | `npm run build` | bundle de 1,48 MB (311 kB gzip), sem erros |
+| Back-end (integração) | `./mvnw verify` | **32 testes**, 0 falhas — `BUILD SUCCESS` |
+| Front-end | `npm test` | **32 testes**, 0 falhas — 7 arquivos de teste |
+| Front-end (build) | `npm run build` | bundle de 1,53 MB (319 kB gzip), sem erros |
 
 Cobertura dos testes back-end: cadastro válido, validação de campos inválidos, e-mail duplicado,
 cliente inexistente, exclusão bloqueada com oportunidades, cadastro de oportunidade, valor
 inválido, cliente inexistente na oportunidade, transição para ganho, transição para perda com
 motivo obrigatório, transição inválida, reabertura de oportunidade ganha e os cálculos do
 dashboard (inclusive o caso sem dados, sem divisão por zero).
+
+Cobertura dos testes de autenticação: login com credenciais válidas, senha incorreta, e-mail
+inexistente e usuário desativado; cadastro público, e-mail duplicado e senha fraca; exigência de
+token nas rotas protegidas e recusa de token inválido; perfil `VENDEDOR` bloqueado na exclusão
+(HTTP 403) e `GERENTE` autorizado; gestão de usuários restrita ao `ADMIN`; e desativação de um
+usuário derrubando o acesso da sessão na hora.
 
 ## 14. Capturas de tela
 
@@ -431,11 +507,14 @@ cd backend && ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,demo
 # 2. subir o front-end
 cd frontend && npm start
 
-# 3. capturar a tela (exemplo com Chrome headless)
+# 3. capturar a tela de login (não exige sessão)
 chrome --headless=new --disable-gpu --hide-scrollbars \
   --window-size=1440,900 --virtual-time-budget=8000 \
-  --screenshot=docs/screenshots/dashboard.png http://localhost:4200/dashboard
+  --screenshot=docs/screenshots/login.png http://localhost:4200/login
 ```
+
+> As telas internas exigem sessão. Para capturá-las, faça o login no navegador antes de rodar o
+> comando, ou use um perfil do Chrome já autenticado.
 
 | Dashboard | Clientes |
 | --- | --- |
@@ -449,9 +528,13 @@ chrome --headless=new --disable-gpu --hide-scrollbars \
 | --- | --- |
 | ![Cadastro de cliente](docs/screenshots/cliente-form.png) | ![Detalhes do cliente](docs/screenshots/cliente-detalhes.png) |
 
-| Cadastro de oportunidade | |
+| Cadastro de oportunidade | Login |
 | --- | --- |
-| ![Cadastro de oportunidade](docs/screenshots/oportunidade-form.png) | |
+| ![Cadastro de oportunidade](docs/screenshots/oportunidade-form.png) | ![Login](docs/screenshots/login.png) |
+
+| Gestão de usuários (ADMIN) |
+| --- |
+| ![Usuários](docs/screenshots/usuarios.png) |
 
 ## 15. Decisões técnicas
 
@@ -495,15 +578,41 @@ Cada tela é um componente standalone com seu próprio HTML/SCSS, importando ape
 utiliza. O bundle inicial fica em ~311 kB (gzipped) apesar da biblioteca de UI completa.
 
 **Testes de integração reais no back-end.**
-`ClienteControllerIT`, `OportunidadeControllerIT` e `DashboardControllerIT` sobem o contexto
-Spring completo com H2 em memória e validam status HTTP e corpo da resposta — não apenas a lógica
-de negócio isolada.
+`ClienteControllerIT`, `OportunidadeControllerIT`, `DashboardControllerIT` e `AuthControllerIT` sobem
+o contexto Spring completo com H2 em memória e validam status HTTP e corpo da resposta — não
+apenas a lógica de negócio isolada.
+
+**Autenticação stateless com token JWT.**
+A API não guarda sessão: cada requisição carrega um token assinado com HMAC-SHA256 no cabeçalho
+`Authorization`. Isso mantém a API horizontalmente escalável e evita o acoplamento do back-end com
+a origem do front-end. A chave vive em `app.jwt.secret` e deve ser trocada por um valor aleatório
+em produção.
+
+**O usuário é recarregado do banco a cada requisição.**
+`ConversorJwtAuthentication` ignora os perfis gravados no token e busca o usuário novamente. Assim,
+alterar o perfil de acesso ou desativar um usuário tem efeito imediato, sem esperar a expiração do
+token.
+
+**As regras de autorização ficam centralizadas.**
+O `SecurityConfig` define, em um único lugar, quais rotas exigem sessão e quais exigem um perfil
+específico. A interface apenas esconde os botões que o usuário não pode usar — mas quem decide é
+sempre a API, que responde `403` se a operação for tentada de qualquer forma.
+
+**Senhas nunca são gravadas em texto puro.**
+O `BCryptPasswordEncoder` calcula o hash no cadastro e no login. O hash é o que vai para o banco;
+a senha em claro nunca é persistida nem devolvida pela API.
 
 ## 16. Limitações conhecidas
 
-- **Sem autenticação.** A primeira versão é local e não implementa login (nada de autenticação
-  fictícia). Qualquer pessoa com acesso à porta 8080 usa a API. As rotas não estão protegidas.
-- **Usuário único.** Não há multiusuário, nem histórico de *quem* alterou um registro.
+- **Token no `localStorage`.** A sessão é mantida no armazenamento do navegador, o que expõe o
+  token a ataques de XSS. Para uma versão em produção, prefira um cookie `HttpOnly` com `SameSite`.
+- **Sem refresh token.** A sessão expira em 8 horas (`app.jwt.expiracao-minutos`) e o usuário
+  precisa entrar de novo. Não há renovação automática.
+- **Sem recuperação de senha.** Não existe fluxo de "esqueci minha senha" nem envio de e-mail.
+- **Sem histórico de auditoria.** Os registros não guardam *quem* criou ou alterou cada cliente e
+  oportunidade, apenas as datas.
+- **Sem segregação de dados por vendedor.** Todos os usuários autenticados veem a base completa de
+  clientes e oportunidades; o perfil `VENDEDOR` apenas não pode excluir registros.
 - **Busca textual simples.** A busca de clientes usa `LIKE` sobre três campos; não há busca
   full-text nem tolerância a erros de digitação.
 - **Relatórios são apenas os do dashboard.** Não há exportação para CSV/PDF nem relatórios
@@ -518,8 +627,10 @@ de negócio isolada.
 
 ## 17. Melhorias futuras
 
-- Autenticação real (Spring Security + JWT) e proteção das rotas por perfil de usuário
-- Perfis de acesso (vendedor, gerente, administrador) e registro de auditoria
+- Refresh token e cookie `HttpOnly` com `SameSite`, em vez do `localStorage`
+- Fluxo de recuperação de senha e troca de senha pelo próprio usuário
+- Registro de auditoria (quem criou ou alterou cada registro)
+- Segregação de dados: cada vendedor ver apenas os próprios clientes e oportunidades
 - Relatórios exportáveis (CSV) e metas por mês/seller
 - E-mail de acompanhamento automático ao cliente e ao vendedor
 - Importação de contatos via CSV
@@ -540,6 +651,8 @@ npm install
 npm start                                                    # http://localhost:4200
 npm test                                                     # testes
 ```
+
+**Acesso à aplicação:** <http://localhost:4200> · `admin@nexuscrm.local` / `Nexus@2026`
 
 ## 19. Licença
 
