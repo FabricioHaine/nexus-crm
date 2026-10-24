@@ -988,7 +988,7 @@ Projeto sob a licença **MIT**. Sinta-se à vontade para estudar, reutilizar e c
 ```text
 MIT License
 
-Copyright (c) 2026 Nexus CRM
+Copyright (c) 2026 FabricioHaine
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
